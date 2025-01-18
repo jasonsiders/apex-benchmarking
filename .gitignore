@@ -43,3 +43,6 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Unpackageable Metadata
+force-app/main/default/profiles/*profile-meta.xml

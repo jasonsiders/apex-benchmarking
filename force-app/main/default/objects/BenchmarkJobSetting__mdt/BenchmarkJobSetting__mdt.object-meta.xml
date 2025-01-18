@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Includes configuration details for a single instance of a benchmark job.</description>
+    <label>Benchmark Job Setting</label>
+    <pluralLabel>Benchmark Job Settings</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>
