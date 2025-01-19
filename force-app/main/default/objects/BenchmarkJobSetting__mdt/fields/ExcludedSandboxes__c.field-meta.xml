@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ExcludedSandboxes__c</fullName>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText
+	>A comma-separated list of sandbox domain names (ex., &quot;full&quot;, &quot;partial&quot;, &quot;uat&quot;, etc.) that will be excluded from processing. 
+Use this field to prevent the job from running in certain sandboxes, if desired. 
+To prevent the job from running in a production environment, set the &quot;Run In Production&quot; field to false.</inlineHelpText>
+    <label>Excluded Sandbox(es)</label>
+    <required>false</required>
+    <type>TextArea</type>
+</CustomField>
