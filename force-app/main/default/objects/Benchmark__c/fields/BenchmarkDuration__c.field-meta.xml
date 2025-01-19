@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>BenchmarkDuration__c</fullName>
+    <externalId>false</externalId>
+    <formula>BenchmarkCompletedAt__c - BenchmarkStartedAt__c</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <inlineHelpText>Indicates the total amount of time (in milliseconds) that the benchmark method took to complete.
+Most reports should key off of this field to demonstrate the performance of benchmarks over time.</inlineHelpText>
+    <label>Benchmark Duration (ms)</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <trackTrending>false</trackTrending>
+    <type>Number</type>
+    <unique>false</unique>
+</CustomField>
