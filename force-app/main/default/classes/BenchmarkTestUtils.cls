@@ -1,16 +1,20 @@
 @SuppressWarnings('PMD.AvoidGlobalModifier')
 @IsTest
 global class BenchmarkTestUtils {
-	global static BenchmarkJobSetting__mdt initSetting(Type apexClass) {
+	global static BenchmarkJobSetting__mdt initSetting(Type apexClass, String developerName) {
 		// Initialize a new setting record for testing
 		BenchmarkJobSetting__mdt setting = new BenchmarkJobSetting__mdt(
 			Active__c = true,
 			ApexClass__c = apexClass?.toString(),
-			DeveloperName = apexClass?.toString(),
+			DeveloperName = developerName,
 			RunInProduction__c = true
 		);
 		BenchmarkTestUtils.inject(setting);
 		return setting;
+	}
+
+	global static BenchmarkJobSetting__mdt initSetting(Type apexClass) {
+		return BenchmarkTestUtils.initSetting(apexClass, apexClass?.toString());
 	}
 
 	private static void inject(BenchmarkJobSetting__mdt setting) {
