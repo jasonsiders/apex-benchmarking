@@ -1,4 +1,4 @@
-public without sharing class BenchmarkJob implements System.Queueable, System.Finalizer {
+public without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
 	@TestVisible
 	private static Environment environment = new Environment();
 
@@ -13,17 +13,12 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 
 	public void execute(System.QueueableContext context) {
 		System.attachFinalizer(this);
-		// Is the Benchmark job enabled? If not, terminate the job
-		if (this.shouldRun() == true) {
-			// Instantiate a Benchmark__c record using the settings record
-			this.benchmarkRecord = this.initBenchmarkRecord();
-			// Create an instance of the Benchmarkable instance
-			Benchmarkable instance = this.initBenchmarkable();
-			// Run the setup method
-			this.doSetup(instance);
-			// Run the benchmark method
-			this.doBenchmark(instance);
-		}
+		System.Savepoint savepoint = Database.setSavepoint();
+		this.benchmarkRecord = this.initBenchmarkRecord();
+		Benchmarkable instance = this.initBenchmarkable();
+		this.doSetup(instance);
+		this.doBenchmark(instance);
+		Database.rollback(savepoint);
 	}
 
 	public void execute(System.FinalizerContext context) {
@@ -40,7 +35,7 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 		}
 	}
 
-	public Id launch() {
+	public virtual Id launch() {
 		if (this.currentJob != null) {
 			Id jobId = System.enqueueJob(this);
 			System.debug(System.LoggingLevel.INFO, 'Launching new job: ' + jobId);
@@ -70,9 +65,8 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 		// Remove the currentJob job from the list of pending jobs
 		this.pending?.remove(jobName);
 		// Validate that the job's settings record is still active
-		if (this.currentJob?.Active__c == false) {
+		if (this.currentJob != null && this.shouldRun() == false) {
 			// If so, skip the currentJob job, and recurse to find the next job in the chain
-			System.debug(System.LoggingLevel.FINEST, 'Skipping inactive job');
 			this.getNext();
 		}
 		System.debug(System.LoggingLevel.FINEST, 'Next GarbageCollector__mdt job: ' + this.currentJob?.DeveloperName);
@@ -82,12 +76,25 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 
 	private Benchmark__c initBenchmarkRecord() {
 		// Create a benchmark record based on the details of the corresponding cmdt record
-		return new Benchmark__c(); // TODO!
+		return new Benchmark__c(
+			Description__c = this.currentJob?.Description__c,
+			JobLabel__c = this.currentJob?.MasterLabel,
+			JobName__c = this.currentJob?.DeveloperName,
+			Operation__c = this.currentJob?.Operation__c,
+			SObjectType__c = this.currentJob?.SObjectType__r?.QualifiedApiName
+		);
 	}
 
 	private Benchmarkable initBenchmarkable() {
 		// Initialize a Benchmarkable instance, using the apex class name stored in the cmdt
-		return null; // TODO!
+		String instanceName = this.currentJob?.ApexClass__c;
+		Type instanceType = Type.forName(instanceName);
+		Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
+		if (instance != null) {
+			return instance;
+		} else {
+			throw new System.IllegalArgumentException(instanceName + ' is not of type Benchmarkable');
+		}
 	}
 
 	private void captureErrorDetails(System.FinalizerContext context) {
@@ -103,11 +110,10 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 	}
 
 	private Boolean shouldRun() {
-		// Returns true if the current job is eligible to be run
-		// Returns false if Inactive,
-		// or in an excluded sandbox,
-		// or if in a production environment w/"Run in Production" set to false
-		return true; // TODO!
+		// Returns true if the current job is active & eligible to be run in the current environment
+		Boolean result = (this.currentJob?.Active__c == true && BenchmarkJob.environment?.isEligible(this.currentJob));
+		System.debug(LoggingLevel.FINEST, this.currentJob?.DeveloperName + ' is eligible? ' + result);
+		return result;
 	}
 
 	// **** INNER **** //
@@ -115,6 +121,19 @@ public without sharing class BenchmarkJob implements System.Queueable, System.Fi
 		public virtual String getSandboxName() {
 			System.Url url = System.Url.getOrgDomainUrl();
 			return System.DomainParser.parse(url)?.getSandboxName();
+		}
+
+		public Boolean isEligible(BenchmarkJobSetting__mdt setting) {
+			if (this.isSandbox() == true) {
+				// Check the configured list of excluded sandboxes to see if the current one is listed
+				String currentSandbox = this.getSandboxName();
+				String excluded = setting?.ExcludedSandboxes__c?.deleteWhitespace();
+				List<String> blacklist = excluded?.split('\\,') ?? new List<String>();
+				return new Set<String>(blacklist)?.contains(currentSandbox) == false;
+			} else {
+				// Only run if "Run in Production" is checked
+				return setting?.RunInProduction__c == true;
+			}
 		}
 
 		public Boolean isSandbox() {

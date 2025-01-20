@@ -133,6 +133,25 @@ private class BenchmarkJobTest {
 	}
 
 	@IsTest
+	static void shouldHandleErrorsInFinalizer() {
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class);
+		BenchmarkJob cursedJob = new JobWithErrorInFinalizer();
+
+		try {
+			Test.startTest();
+			System.enqueueJob(cursedJob);
+			Test.stopTest();
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
+
+		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		Assert.areEqual(1, jobs?.size(), 'Wrong # of Jobs ran');
+		List<Benchmark__c> results = BenchmarkJobTest.getResults();
+		Assert.areEqual(0, results?.size(), 'Wrong # of results');
+	}
+
+	@IsTest
 	static void shouldLaunchNextJobInChain() {
 		Integer numJobs = 3;
 		for (Integer i = 0; i < numJobs; i++) {
@@ -200,6 +219,36 @@ private class BenchmarkJobTest {
 		Assert.areEqual(0, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
+	@IsTest
+	static void shouldProcessMixOfActiveAndInactiveJobs() {
+		BenchmarkJobSetting__mdt setting1 = BenchmarkTestUtils.initSetting(
+			BenchmarkJobTest.ExampleBenchmarkable.class,
+			'Job_1'
+		);
+		setting1.Active__c = false;
+		BenchmarkJobSetting__mdt setting2 = BenchmarkTestUtils.initSetting(
+			BenchmarkJobTest.ExampleBenchmarkable.class,
+			'Job_2'
+		);
+		setting2.Active__c = true;
+		BenchmarkJobSetting__mdt setting3 = BenchmarkTestUtils.initSetting(
+			BenchmarkJobTest.ExampleBenchmarkable.class,
+			'Job_3'
+		);
+		setting3.Active__c = false;
+
+		Test.startTest();
+		new BenchmarkJob()?.launch();
+		Test.stopTest();
+
+		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		Assert.areEqual(1, jobs?.size(), 'Wrong # of Jobs ran');
+		List<Benchmark__c> results = BenchmarkJobTest.getResults();
+		Assert.areEqual(1, results?.size(), 'Wrong # of results');
+		Benchmark__c result = results?.get(0);
+		Assert.areEqual(setting2?.DeveloperName, result?.JobName__c, 'Wrong job ran');
+	}
+
 	// **** HELPER **** //
 	private static List<AsyncApexJob> getAsyncJobs() {
 		return [
@@ -252,8 +301,10 @@ private class BenchmarkJobTest {
 		}
 	}
 
-	public class NotBenchmarkable {
-		// This class doesn't implement Benchmarkable
+	public class JobWithErrorInFinalizer extends BenchmarkJob {
+		public override Id launch() {
+			throw new System.DmlException('Test Exception');
+		}
 	}
 
 	public class MockEnvironment extends BenchmarkJob.Environment {
@@ -272,6 +323,10 @@ private class BenchmarkJobTest {
 		public override String getSandboxName() {
 			return this.sandboxName;
 		}
+	}
+
+	public class NotBenchmarkable {
+		// This class doesn't implement Benchmarkable
 	}
 
 	public class SetupFail extends ExampleBenchmarkable {
