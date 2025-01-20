@@ -1,4 +1,4 @@
-public abstract without sharing class BenchmarkJobSettingSelector {
+public without sharing abstract class BenchmarkJobSettingSelector {
 	@TestVisible
 	private static Map<String, BenchmarkJobSetting__mdt> settings;
 
