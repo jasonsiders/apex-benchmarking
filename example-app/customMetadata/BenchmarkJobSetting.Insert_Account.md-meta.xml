@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomMetadata
+	xmlns="http://soap.sforce.com/2006/04/metadata"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+>
+    <label>Insert Account</label>
+    <protected>false</protected>
+    <values>
+        <field>Active__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>ApexClass__c</field>
+        <value xsi:type="xsd:string">BenchmarkFailedAccount</value>
+    </values>
+    <values>
+        <field>Description__c</field>
+        <value xsi:type="xsd:string">Benchmarks the creation of a simple Account
+NOTE: This is designed to demonstrate how the framework handles errors; this should always fail</value>
+    </values>
+    <values>
+        <field>ExcludedSandboxes__c</field>
+        <value xsi:nil="true" />
+    </values>
+    <values>
+        <field>Operation__c</field>
+        <value xsi:type="xsd:string">Insert</value>
+    </values>
+    <values>
+        <field>RunInProduction__c</field>
+        <value xsi:type="xsd:boolean">true</value>
+    </values>
+    <values>
+        <field>SObjectType__c</field>
+        <value xsi:type="xsd:string">Account</value>
+    </values>
+</CustomMetadata>
