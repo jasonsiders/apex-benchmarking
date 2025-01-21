@@ -87,4 +87,8 @@
         <object>Benchmark__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
+    <tabSettings>
+        <tab>Benchmark__c</tab>
+        <visibility>Available</visibility>
+    </tabSettings>
 </PermissionSet>
