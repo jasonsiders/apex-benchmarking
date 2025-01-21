@@ -8,7 +8,6 @@
   SetupCompletedAt__c  - SetupStartedAt__c,
   null
 )</formula>
-    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <inlineHelpText
 	>Indicates the total amount of time (in milliseconds) that the setup method took to complete.</inlineHelpText>
     <label>Setup Duration (ms)</label>

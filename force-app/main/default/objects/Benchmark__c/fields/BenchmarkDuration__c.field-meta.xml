@@ -8,7 +8,6 @@
   BenchmarkCompletedAt__c - BenchmarkStartedAt__c,
   null
 )</formula>
-    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
     <inlineHelpText>Indicates the total amount of time (in milliseconds) that the benchmark method took to complete.
 Most reports should key off of this field to demonstrate the performance of benchmarks over time.</inlineHelpText>
     <label>Benchmark Duration (ms)</label>
