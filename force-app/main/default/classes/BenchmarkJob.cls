@@ -1,4 +1,5 @@
-public without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
+@SuppressWarnings('PMD.AvoidGlobalModifier')
+global without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
 	/**
 	 * The BenchmarkJob queueable runs on the BenchmarkJobSetting__mdt custom metadata type.
 	 * Each record represents a single job to be run, and will invoke 1 Queueable run,
@@ -14,14 +15,14 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 	private BenchmarkJobSetting__mdt currentJob;
 	private Map<String, BenchmarkJobSetting__mdt> pending;
 
-	public BenchmarkJob() {
+	global BenchmarkJob() {
 		// Retrieve the list of Benchmark Job Setting records,
 		// and load the first active one for processing
 		this.pending = BenchmarkJobSettingSelector.getAll();
 		this.getNext();
 	}
 
-	public void execute(System.QueueableContext context) {
+	global void execute(System.QueueableContext context) {
 		System.Savepoint savepoint = Database.setSavepoint();
 		try {
 			System.attachFinalizer(this);
@@ -36,7 +37,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	public void execute(System.FinalizerContext context) {
+	global void execute(System.FinalizerContext context) {
 		try {
 			// Prevent inserting empty benchmark records
 			if (this.benchmarkRecord != null) {
@@ -51,7 +52,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	public virtual Id launch() {
+	global virtual Id launch() {
 		if (this.currentJob != null) {
 			Id jobId = System.enqueueJob(this);
 			System.debug(System.LoggingLevel.FINEST, 'Launching new job: ' + jobId);
@@ -139,7 +140,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	// **** INNER **** //
-	public virtual class Environment {
+	global virtual class Environment {
 		// Responsible for determining the current environment type
 		// ie., Production vs. Sandbox, and if Sandbox, which one,
 		// as well as whether a given Benchmark Job is eligible to be run
