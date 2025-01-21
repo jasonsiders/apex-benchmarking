@@ -12,13 +12,20 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	public void execute(System.QueueableContext context) {
-		System.attachFinalizer(this);
 		System.Savepoint savepoint = Database.setSavepoint();
-		this.benchmarkRecord = this.initBenchmarkRecord();
-		Benchmarkable instance = this.initBenchmarkable();
-		this.doSetup(instance);
-		this.doBenchmark(instance);
-		Database.rollback(savepoint);
+		try {
+			System.attachFinalizer(this);
+			this.benchmarkRecord = this.initBenchmarkRecord();
+			Benchmarkable instance = this.initBenchmarkable();
+			this.doSetup(instance);
+			this.doBenchmark(instance);
+		} catch (Exception error) {
+			// Log and re-throw the error
+			System.debug(System.LoggingLevel.ERROR, error);
+			throw error;
+		} finally {
+			Database.rollback(savepoint);
+		}
 	}
 
 	public void execute(System.FinalizerContext context) {
@@ -32,6 +39,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.getNext()?.launch();
 		} catch (Exception error) {
 			System.debug(System.LoggingLevel.ERROR, error);
+			throw error;
 		}
 	}
 

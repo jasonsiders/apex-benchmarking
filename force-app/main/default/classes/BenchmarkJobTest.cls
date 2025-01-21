@@ -30,9 +30,14 @@ private class BenchmarkJobTest {
 	static void shouldHandleErrorsDuringInSetupMethod() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.SetupFail.class);
 
-		Test.startTest();
-		new BenchmarkJob()?.launch();
-		Test.stopTest();
+		try {
+			Test.startTest();
+			new BenchmarkJob()?.launch();
+			Test.stopTest();
+			Assert.fail('An exception was not thrown');
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
 
 		// Verify that the job saved the run results in a Benchmark record
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
@@ -53,9 +58,14 @@ private class BenchmarkJobTest {
 	static void shouldHandleErrorsInBenchmarkMethod() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.BenchmarkFail.class);
 
-		Test.startTest();
-		new BenchmarkJob()?.launch();
-		Test.stopTest();
+		try {
+			Test.startTest();
+			new BenchmarkJob()?.launch();
+			Test.stopTest();
+			Assert.fail('An exception was not thrown');
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
 
 		// Verify that the job saved the run results in a Benchmark record
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
@@ -77,9 +87,14 @@ private class BenchmarkJobTest {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(null);
 		setting.DeveloperName = 'Test_Setting';
 
-		Test.startTest();
-		new BenchmarkJob()?.launch();
-		Test.stopTest();
+		try {
+			Test.startTest();
+			new BenchmarkJob()?.launch();
+			Test.stopTest();
+			Assert.fail('An exception was not thrown');
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
 
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
 		Assert.areEqual(1, results?.size(), 'Wrong # of results');
@@ -98,9 +113,14 @@ private class BenchmarkJobTest {
 		setting.ApexClass__c = 'asdflkjasdflkjadsf'; // ! Not a real apex class name
 		setting.DeveloperName = setting?.ApexClass__c;
 
-		Test.startTest();
-		new BenchmarkJob()?.launch();
-		Test.stopTest();
+		try {
+			Test.startTest();
+			new BenchmarkJob()?.launch();
+			Test.stopTest();
+			Assert.fail('An exception was not thrown');
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
 
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
 		Assert.areEqual(1, results?.size(), 'Wrong # of results');
@@ -117,9 +137,14 @@ private class BenchmarkJobTest {
 	static void shouldHandleClassThatDoesNotImplementBenchmarkable() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.NotBenchmarkable.class);
 
-		Test.startTest();
-		new BenchmarkJob()?.launch();
-		Test.stopTest();
+		try {
+			Test.startTest();
+			new BenchmarkJob()?.launch();
+			Test.stopTest();
+			Assert.fail('An exception was not thrown');
+		} catch (Exception error) {
+			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
+		}
 
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
 		Assert.areEqual(1, results?.size(), 'Wrong # of results');
@@ -141,6 +166,7 @@ private class BenchmarkJobTest {
 			Test.startTest();
 			System.enqueueJob(cursedJob);
 			Test.stopTest();
+			Assert.fail('An exception was not thrown');
 		} catch (Exception error) {
 			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
 		}
@@ -254,7 +280,7 @@ private class BenchmarkJobTest {
 		return [
 			SELECT Id, ApexClass.Name, Status, CreatedDate
 			FROM AsyncApexJob
-			WHERE ApexClass.Name = :BenchmarkJob.class.getName() AND Status IN ('Aborted', 'Completed', 'Failed')
+			WHERE ApexClass.Name = :BenchmarkJob.class.getName()
 		];
 	}
 
