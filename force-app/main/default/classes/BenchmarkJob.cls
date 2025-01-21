@@ -8,6 +8,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	public BenchmarkJob() {
 		this.pending = BenchmarkJobSettingSelector.getAll();
+		System.debug(LoggingLevel.FINEST, 'Benchmark Jobs: ' + JSON.serialize(this.pending));
 		this.getNext();
 	}
 
@@ -34,11 +35,12 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			if (this.benchmarkRecord != null) {
 				this.captureErrorDetails(context);
 				Database.insert(this.benchmarkRecord, System.AccessLevel.SYSTEM_MODE);
+				System.debug(LoggingLevel.FINEST, 'Benchmark: ' + JSON.serialize(this.benchmarkRecord));
 			}
 			// Launch the next iteration of the job
 			this.getNext()?.launch();
 		} catch (Exception error) {
-			System.debug(System.LoggingLevel.ERROR, error);
+			System.debug(System.LoggingLevel.ERROR, 'Finalizer Error: ' + error);
 			throw error;
 		}
 	}
@@ -98,6 +100,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		String instanceName = this.currentJob?.ApexClass__c;
 		Type instanceType = Type.forName(instanceName);
 		Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
+		System.debug('@jason: Instance: ' + instance);
 		if (instance != null) {
 			return instance;
 		} else {
