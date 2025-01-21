@@ -1,4 +1,12 @@
 public without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
+	/**
+	 * The BenchmarkJob queueable runs on the BenchmarkJobSetting__mdt custom metadata type.
+	 * Each record represents a single job to be run, and will invoke 1 Queueable run,
+	 * provided that it is active & eligible to be run in the current environment.
+	 * The BenchmarkJob dynamically instantiates a Benchmarkable instance,
+	 * and uses this instance to perform measurable tasks to be recorded in a Benchmark__c record.
+	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
+	 **/
 	@TestVisible
 	private static Environment environment = new Environment();
 
@@ -7,8 +15,9 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 	private Map<String, BenchmarkJobSetting__mdt> pending;
 
 	public BenchmarkJob() {
+		// Retrieve the list of Benchmark Job Setting records,
+		// and load the first active one for processing
 		this.pending = BenchmarkJobSettingSelector.getAll();
-		System.debug(LoggingLevel.FINEST, 'All BenchmarkJobSetting__mdt: ' + this.pending?.values());
 		this.getNext();
 	}
 

@@ -4,6 +4,7 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 
 	public static Map<String, BenchmarkJobSetting__mdt> getAll() {
 		settings = settings ?? BenchmarkJobSettingSelector.retrieveFromOrg();
+		System.debug(LoggingLevel.FINEST, 'All BenchmarkJobSetting__mdt: ' + settings?.values());
 		return settings;
 	}
 
