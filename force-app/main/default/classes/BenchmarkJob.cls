@@ -21,8 +21,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.doSetup(instance);
 			this.doBenchmark(instance);
 		} catch (Exception error) {
-			// Log and re-throw the error
-			this.handleException(error);
+			this.logAndRethrow(error);
 		} finally {
 			Database.rollback(savepoint);
 		}
@@ -39,8 +38,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			// Launch the next iteration of the job
 			this.getNext()?.launch();
 		} catch (Exception error) {
-			// Log and re-throw the error
-			this.handleException(error);
+			this.logAndRethrow(error);
 		}
 	}
 
@@ -83,8 +81,9 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		return this;
 	}
 
-	private void handleException(Exception error) {
-		System.debug(System.LoggingLevel.ERROR, error + '\n' + error?.getStackTraceString());
+	private void logAndRethrow(Exception error) {
+		String msg = error + '\n' + error?.getStackTraceString();
+		System.debug(System.LoggingLevel.ERROR, msg);
 		throw error;
 	}
 
@@ -132,6 +131,9 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	// **** INNER **** //
 	public virtual class Environment {
+		// Responsible for determining the current environment type
+		// ie., Production vs. Sandbox, and if Sandbox, which one,
+		// as well as whether a given Benchmark Job is eligible to be run
 		public virtual String getSandboxName() {
 			System.Url url = System.Url.getOrgDomainUrl();
 			return System.DomainParser.parse(url)?.getSandboxName();

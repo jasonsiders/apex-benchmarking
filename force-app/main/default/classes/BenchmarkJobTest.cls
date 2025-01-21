@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.EmptyCatchBlock')
 @IsTest
 private class BenchmarkJobTest {
 	@IsTest
