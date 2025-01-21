@@ -3,7 +3,7 @@
 private class BenchmarkJobTest {
 	@IsTest
 	static void shouldRunBenchmarkJob() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
 
 		Test.startTest();
 		new BenchmarkJob()?.launch();
@@ -111,7 +111,7 @@ private class BenchmarkJobTest {
 	static void shouldHandleInvalidApexClassName() {
 		String badClassName = 'asdflkjasdflkjadsf'; // ! Not a real apex class name
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(
-			BenchmarkJobTest.ExampleBenchmarkable.class,
+			BenchmarkMocks.BenchmarkableExample.class,
 			badClassName
 		);
 		setting.ApexClass__c = badClassName;
@@ -162,7 +162,7 @@ private class BenchmarkJobTest {
 
 	@IsTest
 	static void shouldHandleErrorsInFinalizer() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
 		BenchmarkJob cursedJob = new JobWithErrorInFinalizer();
 
 		Id jobId;
@@ -175,7 +175,7 @@ private class BenchmarkJobTest {
 			// Try/Catch needed to prevent aborting the test, and to trigger the finalizer
 		}
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(1, jobs?.size(), 'Wrong # of Jobs ran');
 		// Note: A Benchmark__c record *shouldn't* be inserted here, but it is...
 		// We can't assert this behavior since this test is catching the exception
@@ -186,14 +186,14 @@ private class BenchmarkJobTest {
 	static void shouldLaunchNextJobInChain() {
 		Integer numJobs = 3;
 		for (Integer i = 0; i < numJobs; i++) {
-			BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class, 'Job_' + (i + 1));
+			BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class, 'Job_' + (i + 1));
 		}
 
 		Test.startTest();
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(numJobs, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
@@ -203,7 +203,7 @@ private class BenchmarkJobTest {
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(0, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
@@ -216,54 +216,54 @@ private class BenchmarkJobTest {
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(0, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
 	@IsTest
 	static void shouldNotRunInProductionIfExcluded() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
 		setting.RunInProduction__c = false;
 		// Simulate a production environment...
-		BenchmarkJob.environment = new BenchmarkJobTest.MockEnvironment();
+		BenchmarkJob.environment = new BenchmarkMocks.ProductionEnvironment();
 
 		Test.startTest();
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(0, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
 	@IsTest
 	static void shouldNotRunInSandboxIfExcluded() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.ExampleBenchmarkable.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
 		setting.ExcludedSandboxes__c = 'sandbox1,sandbox2,sandbox3';
 		// Simulate a specific sandbox environment
-		BenchmarkJob.environment = new BenchmarkJobTest.MockEnvironment('sandbox2');
+		BenchmarkJob.environment = new BenchmarkMocks.SandboxEnvironment('sandbox2');
 
 		Test.startTest();
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(0, jobs?.size(), 'Wrong # of Jobs ran');
 	}
 
 	@IsTest
 	static void shouldProcessMixOfActiveAndInactiveJobs() {
 		BenchmarkJobSetting__mdt setting1 = BenchmarkTestUtils.initSetting(
-			BenchmarkJobTest.ExampleBenchmarkable.class,
+			BenchmarkMocks.BenchmarkableExample.class,
 			'Job_1'
 		);
 		setting1.Active__c = false;
 		BenchmarkJobSetting__mdt setting2 = BenchmarkTestUtils.initSetting(
-			BenchmarkJobTest.ExampleBenchmarkable.class,
+			BenchmarkMocks.BenchmarkableExample.class,
 			'Job_2'
 		);
 		setting2.Active__c = true;
 		BenchmarkJobSetting__mdt setting3 = BenchmarkTestUtils.initSetting(
-			BenchmarkJobTest.ExampleBenchmarkable.class,
+			BenchmarkMocks.BenchmarkableExample.class,
 			'Job_3'
 		);
 		setting3.Active__c = false;
@@ -272,7 +272,7 @@ private class BenchmarkJobTest {
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
 
-		List<AsyncApexJob> jobs = BenchmarkJobTest.getAsyncJobs();
+		List<AsyncApexJob> jobs = BenchmarkTestUtils.getAsyncJobs();
 		Assert.areEqual(1, jobs?.size(), 'Wrong # of Jobs ran');
 		List<Benchmark__c> results = BenchmarkJobTest.getResults();
 		Assert.areEqual(1, results?.size(), 'Wrong # of results');
@@ -281,16 +281,6 @@ private class BenchmarkJobTest {
 	}
 
 	// **** HELPER **** //
-	private static List<AsyncApexJob> getAsyncJobs() {
-		List<AsyncApexJob> jobs = [
-			SELECT Id, ApexClass.Name, JobType, Status, CreatedDate
-			FROM AsyncApexJob
-			WHERE JobType = 'Queueable'
-		];
-		System.debug(LoggingLevel.FINEST, 'AsyncApexJobs: ' + JSON.serializePretty(jobs));
-		return jobs;
-	}
-
 	private static List<Benchmark__c> getResults() {
 		return [
 			SELECT
@@ -311,24 +301,7 @@ private class BenchmarkJobTest {
 	}
 
 	// **** INNER **** //
-	public virtual class ExampleBenchmarkable implements Benchmarkable {
-		private Id accountId;
-
-		public virtual void setup() {
-			// Create an Account
-			Account account = new Account(Name = 'Test Account');
-			Database.insert(account, System.AccessLevel.SYSTEM_MODE);
-			this.accountId = account?.Id;
-		}
-
-		public virtual void benchmark() {
-			// Create a Case related to the Account
-			Case testCase = new Case(AccountId = this.accountId);
-			insert testCase;
-		}
-	}
-
-	public class BenchmarkFail extends ExampleBenchmarkable {
+	public class BenchmarkFail extends BenchmarkMocks.BenchmarkableExample {
 		public override void benchmark() {
 			throw new System.DmlException('Mock Exception!');
 		}
@@ -340,29 +313,11 @@ private class BenchmarkJobTest {
 		}
 	}
 
-	public class MockEnvironment extends BenchmarkJob.Environment {
-		private String sandboxName;
-
-		public MockEnvironment(String sandboxName) {
-			// This constructor simulates a specific sandbox environment
-			this.sandboxName = sandboxName;
-		}
-
-		public MockEnvironment() {
-			// The 0-arg constructor simulates a production environment
-			this(null);
-		}
-
-		public override String getSandboxName() {
-			return this.sandboxName;
-		}
-	}
-
 	public class NotBenchmarkable {
 		// This class doesn't implement Benchmarkable
 	}
 
-	public class SetupFail extends ExampleBenchmarkable {
+	public class SetupFail extends BenchmarkMocks.BenchmarkableExample {
 		public override void setup() {
 			throw new System.DmlException('Mock Exception!');
 		}
