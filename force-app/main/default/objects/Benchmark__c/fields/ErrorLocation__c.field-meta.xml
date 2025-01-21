@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ErrorLocation__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(
+  ISBLANK(Error__c),
+  null,
+  IF(
+    NOT(ISBLANK(BenchmarkStartedAt__c)),
+    &quot;benchmark()&quot;,
+    IF(
+      NOT(ISBLANK(SetupStartedAt__c)),
+      &quot;setup()&quot;,
+      &quot;Unknown&quot;
+    )
+  )
+)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <inlineHelpText>Indicates at what point in the job an error was thrown.</inlineHelpText>
+    <label>Error Location</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

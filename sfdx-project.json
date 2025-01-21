@@ -1,12 +1,20 @@
 {
 	"packageDirectories": [
 		{
+			"versionName": "ver 0.1.0",
+			"versionNumber": "0.1.0.NEXT",
 			"path": "force-app",
-			"default": true
+			"default": true,
+			"package": "apex-benchmarking",
+			"versionDescription": ""
 		}
 	],
 	"name": "apex-benchmarking",
 	"namespace": "",
 	"sfdcLoginUrl": "https://login.salesforce.com",
-	"sourceApiVersion": "62.0"
+	"sourceApiVersion": "62.0",
+	"packageAliases": {
+		"apex-benchmarking": "0HoDn0000010wCEKAY",
+		"apex-benchmarking@0.1.0-4": "04tDn0000011NzDIAU"
+	}
 }
