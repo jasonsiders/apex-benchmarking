@@ -8,7 +8,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	public BenchmarkJob() {
 		this.pending = BenchmarkJobSettingSelector.getAll();
-		System.debug(LoggingLevel.FINEST, 'Benchmark Jobs: ' + JSON.serialize(this.pending));
+		System.debug(LoggingLevel.FINEST, 'All BenchmarkJobSetting__mdt: ' + this.pending?.values());
 		this.getNext();
 	}
 
@@ -22,8 +22,7 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.doBenchmark(instance);
 		} catch (Exception error) {
 			// Log and re-throw the error
-			System.debug(System.LoggingLevel.ERROR, error);
-			throw error;
+			this.handleException(error);
 		} finally {
 			Database.rollback(savepoint);
 		}
@@ -35,20 +34,20 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 			if (this.benchmarkRecord != null) {
 				this.captureErrorDetails(context);
 				Database.insert(this.benchmarkRecord, System.AccessLevel.SYSTEM_MODE);
-				System.debug(LoggingLevel.FINEST, 'Benchmark: ' + JSON.serialize(this.benchmarkRecord));
+				System.debug(LoggingLevel.FINEST, 'Saved Benchmark: ' + this.benchmarkRecord);
 			}
 			// Launch the next iteration of the job
 			this.getNext()?.launch();
 		} catch (Exception error) {
-			System.debug(System.LoggingLevel.ERROR, 'Finalizer Error: ' + error);
-			throw error;
+			// Log and re-throw the error
+			this.handleException(error);
 		}
 	}
 
 	public virtual Id launch() {
 		if (this.currentJob != null) {
 			Id jobId = System.enqueueJob(this);
-			System.debug(System.LoggingLevel.INFO, 'Launching new job: ' + jobId);
+			System.debug(System.LoggingLevel.FINEST, 'Launching new job: ' + jobId);
 			return jobId;
 		} else {
 			return null;
@@ -84,6 +83,11 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		return this;
 	}
 
+	private void handleException(Exception error) {
+		System.debug(System.LoggingLevel.ERROR, error + '\n' + error?.getStackTraceString());
+		throw error;
+	}
+
 	private Benchmark__c initBenchmarkRecord() {
 		// Create a benchmark record based on the details of the corresponding cmdt record
 		return new Benchmark__c(
@@ -100,7 +104,6 @@ public without sharing virtual class BenchmarkJob implements System.Queueable, S
 		String instanceName = this.currentJob?.ApexClass__c;
 		Type instanceType = Type.forName(instanceName);
 		Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
-		System.debug('@jason: Instance: ' + instance);
 		if (instance != null) {
 			return instance;
 		} else {
