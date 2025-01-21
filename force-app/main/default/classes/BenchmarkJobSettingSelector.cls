@@ -31,6 +31,7 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 				Description__c,
 				DeveloperName,
 				ExcludedSandboxes__c,
+				MasterLabel,
 				Operation__c,
 				RunInProduction__c,
 				SObjectType__r.QualifiedApiName
