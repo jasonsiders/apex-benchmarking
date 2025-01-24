@@ -1,18 +1,60 @@
-# Salesforce DX Project: Next Steps
+# `apex-benchmarking`
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+:warning: TODO! :warning:
 
-## How Do You Plan to Deploy Your Changes?
+---
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+## Getting Started
 
-## Configure Your Salesforce DX Project
+`apex-benchmarking` is available as an unlocked package. You can find all package version ids catalogued in the repo's [Releases](https://github.com/jasonsiders/apex-benchmarking/releases/).
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+### Installation
 
-## Read All About It
+Run the following command, replacing `<<package_version_id>>` with your desired package ID (which begins with `04t`):
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+```sh
+sf package install --package <<package_version_id>> --wait 10
+```
+
+### Provisioning
+
+The results of Benchmark jobs are stored in a custom object, called `Benchmark__c`. To be able to view these records, users must have access to the object.
+
+You can provision access to this object via one of the included permission sets:
+
+- `BenchmarkAccess`: Gives **read-only** access to _Benchmark_ records.
+- `BenchmarkAdministrator`: Gives **full** access to _Benchmark_ records.
+
+Run the following command to assign yourself the appropriate permissions:
+
+```sh
+sf org assign permset --name BenchmarkAdministrator
+```
+
+---
+
+## Usage
+
+Setting up your own benchmarking test cases is a relatively simple process for a developer to perform.
+
+### Creating `Benchmarkable` Instances
+
+:warning: TODO! :warning:
+
+### Configuring `BenchmarkJobSetting__mdt` Records
+
+:warning: TODO! :warning:
+
+### Scheduling Recurring Benchmark Jobs
+
+To schedule your benchmark jobs to run at a regular interval, use the included `BenchmarkSchedulable` class.
+
+For example, this anonymous apex script schedules benchmark jobs to run at the top of each hour:
+
+```java
+String jobName = 'Benchmark: Hourly';
+String hourlyCron = '0 0 * * * ?';
+System.Schedulable job = new BenchmarkSchedulable();
+Id jobId = System.schedule(jobName, hourlyCron, job);
+System.debug('Scheduled: ' + jobId);
+```
