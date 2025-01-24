@@ -68,20 +68,20 @@ Here is an example implementation that measures the time it takes to create a `C
 
 ```java
 public without sharing class BenchmarkContactCreate implements Benchmarkable {
-	private Contact contact;
+  private Contact contact;
 
-	public void setup() {
-		// Insert an Account
-		Account acc = new Account(Name = 'Test Account');
-		Database.insert(acc, System.AccessLevel.SYSTEM_MODE);
-        // Create a Contact, to be inserted later...
-		this.contact = new Contact(AccountId = acc?.Id, FirstName = 'John', LastName = 'Doe');
-	}
+  public void setup() {
+    // Insert an Account
+    Account acc = new Account(Name = 'Test Account');
+    Database.insert(acc, System.AccessLevel.SYSTEM_MODE);
+    // Create a Contact, to be inserted later...
+    this.contact = new Contact(AccountId = acc?.Id, FirstName = 'John', LastName = 'Doe');
+  }
 
-	public void benchmark() {
-		// Insert the aforementioned Contact
-		Database.insert(this.contact, System.AccessLevel.SYSTEM_MODE);
-	}
+  public void benchmark() {
+    // Insert the aforementioned Contact
+    Database.insert(this.contact, System.AccessLevel.SYSTEM_MODE);
+  }
 }
 ```
 
