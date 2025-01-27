@@ -41,7 +41,28 @@ private class BenchmarkJobSettingSelectorTest {
 	}
 
 	@IsTest
-	static void shouldReturnRecordByDeveloperName() {
+	static void shouldReturnMultipleRecordsByDeveloperName() {
+		BenchmarkJobSettingSelector.settings = new Map<String, BenchmarkJobSetting__mdt>();
+		for (Integer i = 0; i < 3; i++) {
+			String devName = 'My_Test_Setting_' + i;
+			BenchmarkJobSetting__mdt mockSetting = new BenchmarkJobSetting__mdt(DeveloperName = devName);
+			BenchmarkJobSettingSelector.settings?.put(devName, mockSetting);
+		}
+		// Select a subset of the chosen settings
+		Set<String> settingNames = new Set<String>{ 'My_Test_Setting_0', 'My_Test_Setting_1' };
+
+		Test.startTest();
+		Map<String, BenchmarkJobSetting__mdt> settings = BenchmarkJobSettingSelector.get(settingNames);
+		Test.stopTest();
+
+		Assert.areEqual(settingNames?.size(), settings?.size(), 'Wrong # of settings returned');
+		for (String settingName : settingNames) {
+			Assert.areEqual(true, settings?.containsKey(settingName), 'Did not return mocked setting');
+		}
+	}
+
+	@IsTest
+	static void shouldReturnSingleRecordByDeveloperName() {
 		String devName = 'My_Test_Setting';
 		BenchmarkJobSetting__mdt mockSetting = new BenchmarkJobSetting__mdt(DeveloperName = devName);
 		BenchmarkJobSettingSelector.settings = new Map<String, BenchmarkJobSetting__mdt>{

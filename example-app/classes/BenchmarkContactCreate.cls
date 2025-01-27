@@ -13,8 +13,8 @@ public without sharing class BenchmarkContactCreate implements Benchmarkable {
 	}
 
 	public void benchmark() {
-		// Create a Case related to the Account
-		Case testCase = new Case(AccountId = this.accountId);
+		// Create a Contact related to the Account
+		Contact testContact = new Contact(AccountId = this.accountId, FirstName = 'John', LastName = 'Doe');
 		insert testCase;
 	}
 }

@@ -15,11 +15,16 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	private BenchmarkJobSetting__mdt currentJob;
 	private Map<String, BenchmarkJobSetting__mdt> pending;
 
-	global BenchmarkJob() {
-		// Retrieve the list of Benchmark Job Setting records,
+	global BenchmarkJob(Set<String> jobNames) {
+		// Retrieve the specified list of Benchmark Job Setting records,
 		// and load the first active one for processing
-		this.pending = BenchmarkJobSettingSelector.getAll();
+		this.pending = BenchmarkJobSettingSelector.get(jobNames);
 		this.getNext();
+	}
+
+	global BenchmarkJob() {
+		// This overload processes all defined Benchmark Job Settings records
+		this(BenchmarkJobSettingSelector.getAll()?.keySet());
 	}
 
 	global void execute(System.QueueableContext context) {

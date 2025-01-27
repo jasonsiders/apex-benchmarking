@@ -2,7 +2,7 @@
 @IsTest
 private class BenchmarkJobTest {
 	@IsTest
-	static void shouldRunBenchmarkJob() {
+	static void shouldRunAllBenchmarkJobs() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
 
 		Test.startTest();
@@ -25,6 +25,35 @@ private class BenchmarkJobTest {
 		// Verify that any records processed in the job were rolled back
 		Assert.areEqual(true, [SELECT Id FROM Account]?.isEmpty(), 'Did not rollback Account(s)');
 		Assert.areEqual(true, [SELECT Id FROM Case]?.isEmpty(), 'Did not rollback Case(s)');
+	}
+
+	@IsTest
+	static void shouldRunSpecifiedBenchmarkJobs() {
+		// Create 3 settings records
+		BenchmarkJobSetting__mdt setting1 = BenchmarkTestUtils.initSetting(
+			BenchmarkMocks.BenchmarkableExample.class,
+			'Setting_1'
+		);
+		BenchmarkJobSetting__mdt setting2 = BenchmarkTestUtils.initSetting(
+			BenchmarkMocks.BenchmarkableExample.class,
+			'Setting_2'
+		);
+		BenchmarkJobSetting__mdt setting3 = BenchmarkTestUtils.initSetting(
+			BenchmarkMocks.BenchmarkableExample.class,
+			'Setting_3'
+		);
+		// Only submit one of these settings records for processing
+		Set<String> toProcess = new Set<String>{ setting2?.DeveloperName };
+
+		Test.startTest();
+		new BenchmarkJob(toProcess)?.launch();
+		Test.stopTest();
+
+		// Verify that the job saved the run results in a Benchmark record
+		List<Benchmark__c> results = BenchmarkJobTest.getResults();
+		Assert.areEqual(1, results?.size(), 'Wrong # of results');
+		Benchmark__c result = results?.get(0);
+		Assert.areEqual(setting2?.DeveloperName, result?.JobName__c, 'Wrong JobName__c');
 	}
 
 	@IsTest

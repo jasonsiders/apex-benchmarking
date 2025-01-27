@@ -1,15 +1,38 @@
 public without sharing abstract class BenchmarkJobSettingSelector {
+	/**
+	 * This class is used internally by the framework to centralize queries for BenchmarkJobSetting__mdt records
+	 * This pattern is necessary since custom metadata types can't be DML'd in a test context
+	 * External callers shouldn't need to interact with this class directly;
+	 * Instead, use the global "BenchmarkTestUtils" class methods to mock settings
+	 **/
+
 	@TestVisible
 	private static Map<String, BenchmarkJobSetting__mdt> settings;
 
 	public static Map<String, BenchmarkJobSetting__mdt> getAll() {
+		// This method uses lazy-initialization to retrieve all defined BenchmarkJobSetting__mdt records in the org
+		// Successive calls to this method will return the results from the first time it was called
 		settings = settings ?? BenchmarkJobSettingSelector.retrieveFromOrg();
 		System.debug(LoggingLevel.FINEST, 'All BenchmarkJobSetting__mdt: ' + settings?.values());
 		return settings;
 	}
 
+	public static Map<String, BenchmarkJobSetting__mdt> get(Set<String> settingNames) {
+		// This method returns a subset of the defined BenchmarkJobSetting__mdt records,
+		// where the key of the map is the DeveloperName of each record
+		Map<String, BenchmarkJobSetting__mdt> results = new Map<String, BenchmarkJobSetting__mdt>();
+		for (String settingName : settingNames) {
+			BenchmarkJobSetting__mdt setting = BenchmarkJobSettingSelector.getAll()?.get(settingName);
+			if (setting != null) {
+				results?.put(settingName, setting);
+			}
+		}
+		return results;
+	}
+
 	public static BenchmarkJobSetting__mdt get(String developerName) {
-		return BenchmarkJobSettingSelector.getAll()?.get(developerName);
+		// This method returns the specified BenchmarkJobSetting__mdt record
+		return BenchmarkJobSettingSelector.get(new Set<String>{ developerName })?.get(developerName);
 	}
 
 	@TestVisible
