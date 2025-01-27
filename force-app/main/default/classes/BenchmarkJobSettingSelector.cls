@@ -8,8 +8,19 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 		return settings;
 	}
 
+	public static Map<String, BenchmarkJobSetting__mdt> get(Set<String> settingNames) {
+		Map<String, BenchmarkJobSetting__mdt> results = new Map<String, BenchmarkJobSetting__mdt>();
+		for (String settingName : settingNames) {
+			BenchmarkJobSetting__mdt setting = BenchmarkJobSettingSelector.getAll()?.get(settingName);
+			if (setting != null) {
+				results?.put(settingName, setting);
+			}
+		}
+		return results;
+	}
+
 	public static BenchmarkJobSetting__mdt get(String developerName) {
-		return BenchmarkJobSettingSelector.getAll()?.get(developerName);
+		return BenchmarkJobSettingSelector.get(new Set<String>{ developerName })?.get(developerName);
 	}
 
 	@TestVisible
