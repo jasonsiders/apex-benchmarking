@@ -12,9 +12,9 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	// **** STATIC **** //
 	private static final String FLOW_ERROR_PROPERTY = 'error';
 	@TestVisible
-	private static Environment Environment = new BenchmarkJob.Environment();
+	private static Environment environment = new BenchmarkJob.Environment();
 	@TestVisible
-	private static FlowRunner FlowRunner = new BenchmarkJob.FlowRunner();
+	private static FlowRunner flowRunner = new BenchmarkJob.FlowRunner();
 
 	global static void validate(String jobName) {
 		// Checks if the given job is active & eligible to be run in the current environment
@@ -23,7 +23,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		if (job != null && job?.Active__c == false) {
 			String msg = jobName + ' is inactive';
 			throw new BenchmarkJob.IneligibleJobException(msg);
-		} else if (job != null && BenchmarkJob.environment?.isEligible(job) == false) {
+		} else if (job != null && Environment?.isEligible(job) == false) {
 			String msg = jobName + ' is ineligible to be run in this environment';
 			throw new BenchmarkJob.IneligibleJobException(msg);
 		}
@@ -144,9 +144,14 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	private AbstractProcessor initProcessor() {
-		return (String.isNotBlank(this.currentJob?.ApexClass__c))
-			? (AbstractProcessor) new ApexProcessor(this.currentJob, this.benchmarkRecord)
-			: (AbstractProcessor) new FlowProcessor(this.currentJob, this.benchmarkRecord);
+		if (String.isNotBlank(this.currentJob?.ApexClass__c)) {
+			return new ApexProcessor(this.currentJob, this.benchmarkRecord);
+		} else if (String.isNotBlank(this.currentJob?.Flow__c)) {
+			return new FlowProcessor(this.currentJob, this.benchmarkRecord);
+		} else {
+			String msg = 'No Apex Class or Flow defined in BenchmarkJobSetting__mdt';
+			throw new System.IllegalArgumentException(msg);
+		}
 	}
 
 	private void logAndRethrow(Exception error) {
@@ -251,7 +256,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		public override virtual void process() {
 			this.stamp(Benchmark__c.SetupStartedAt__c);
 			String flowName = this.setting?.Flow__c;
-			BenchmarkJob.flowRunner?.run(flowName);
+			FlowRunner?.run(flowName);
 			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
 			this.reconcileTimestamps();
 		}
@@ -278,6 +283,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.handleFlowErrors(interview);
 		}
 
+		@TestVisible
 		protected virtual Flow.Interview createInterview(String flowName) {
 			return Flow.Interview.createInterview(flowName, new Map<String, Object>{});
 		}

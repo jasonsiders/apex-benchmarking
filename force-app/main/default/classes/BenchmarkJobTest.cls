@@ -397,6 +397,19 @@ private class BenchmarkJobTest {
 		Assert.areEqual(null, result?.BenchmarkCompletedAt__c, 'Should be missing BenchmarkCompletedAt__c');
 	}
 
+	@IsTest
+	static void shouldCoverDefaultFlowRunnerInitialization() {
+		// This is purely for code coverage;
+		// The built-in FlowRunner is always mocked during testing,
+		// since this package doesn't contain any flows
+		try {
+			Flow.Interview flow = new BenchmarkJob.FlowRunner()?.createInterview(null);
+			Assert.fail('An error was not thrown');
+		} catch (System.NullPointerException error) {
+			// As expected...
+		}
+	}
+
 	// **** HELPER **** //
 	private static List<Benchmark__c> getResults() {
 		return [
