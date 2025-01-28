@@ -228,6 +228,9 @@ private class BenchmarkJobTest {
 
 	@IsTest
 	static void shouldNotLaunchJobIfNoJobs() {
+		// Inject an empty list of metadata to be processed
+		BenchmarkJobSettingSelector.settings = new Map<String, BenchmarkJobSetting__mdt>();
+
 		Test.startTest();
 		new BenchmarkJob()?.launch();
 		Test.stopTest();
