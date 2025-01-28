@@ -55,8 +55,8 @@ export default class BenchmarkRetryButton extends NavigationMixin(LightningEleme
 
 	showSuccessToast() {
 		const event = new ShowToastEvent({
-			title: `Launching ${this.jobName}...`,
-			message: "A new Benchmark record will be created in a few moments",
+			title: `Launched Job: "${this.jobName}"`,
+			message: "Check back in a few moments for a new Benchmark record",
 			variant: "success"
 		});
 		this.dispatchEvent(event);
