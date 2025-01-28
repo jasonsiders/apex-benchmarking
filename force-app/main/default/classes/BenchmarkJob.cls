@@ -99,19 +99,21 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	private BenchmarkJob getNext() {
-		// Get the next BenchmarkJobSetting__mdt to process
-		String jobName = (this.pending?.isEmpty() == false) ? this.pending?.values()?.get(0)?.DeveloperName : null;
-		this.currentJob = BenchmarkJobSettingSelector.get(jobName);
-		// Remove the currentJob job from the list of pending jobs
-		this.pending?.remove(jobName);
-		// Validate that the job's settings record is still active
-		if (this.currentJob != null && this.shouldRun() == false) {
+		try {
+			// Get the next BenchmarkJobSetting__mdt to process
+			String jobName = (this.pending?.isEmpty() == false) ? this.pending?.values()?.get(0)?.DeveloperName : null;
+			this.currentJob = BenchmarkJobSettingSelector.get(jobName);
+			// Remove the currentJob job from the list of pending jobs
+			this.pending?.remove(jobName);
+			// Validate that the job's settings record is still active
+			this.validateJob();
+			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
+			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
+			return this;
+		} catch (BenchmarkJob.IneligibleJobException error) {
 			// If so, skip the currentJob job, and recurse to find the next job in the chain
-			this.getNext();
+			return this.getNext();
 		}
-		System.debug(System.LoggingLevel.FINEST, 'Next GarbageCollector__mdt job: ' + this.currentJob?.DeveloperName);
-		System.debug(System.LoggingLevel.FINEST, 'Pending GarbageCollector__mdt jobs: ' + this.pending?.keySet());
-		return this;
 	}
 
 	private String getSObjectType() {
@@ -150,14 +152,23 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		throw error;
 	}
 
-	private Boolean shouldRun() {
+	private void validateJob() {
 		// Returns true if the current job is active & eligible to be run in the current environment
-		Boolean result = (this.currentJob?.Active__c == true && BenchmarkJob.environment?.isEligible(this.currentJob));
-		System.debug(LoggingLevel.FINEST, this.currentJob?.DeveloperName + ' is eligible? ' + result);
-		return result;
+		if (this.currentJob == null) {
+			return;
+		} else if (this.currentJob?.Active__c == false) {
+			String msg = this.currentJob?.DeveloperName + ' is inactive';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		} else if (BenchmarkJob.environment?.isEligible(this.currentJob) == false) {
+			String msg = this.currentJob?.DeveloperName + ' is ineligible to be run in this environment';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		}
 	}
 
 	// **** INNER **** //
+	global class IneligibleJobException extends Exception {
+	}
+
 	@TestVisible
 	private virtual class Environment {
 		// Responsible for determining the current environment type
