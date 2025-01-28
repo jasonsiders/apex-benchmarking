@@ -67,6 +67,19 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
+	// **** PRIVATE **** //
+	private void captureErrorDetails(System.FinalizerContext context) {
+		// Record any errors that resulted in the process
+		if (context?.getResult() == System.ParentJobResult.UNHANDLED_EXCEPTION) {
+			System.Exception error = context?.getException();
+			this.benchmarkRecord.Error__c = error?.getTypeName();
+			this.benchmarkRecord.ErrorDetail__c = String.join(
+				new List<String>{ error?.getMessage(), error?.getStackTraceString() },
+				'\n'
+			);
+		}
+	}
+
 	private void doBenchmark(Benchmarkable instance) {
 		this.benchmarkRecord.BenchmarkStartedAt__c = Limits.getCpuTime();
 		instance?.benchmark();
@@ -96,10 +109,11 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		return this;
 	}
 
-	private void logAndRethrow(Exception error) {
-		String msg = error + '\n' + error?.getStackTraceString();
-		System.debug(System.LoggingLevel.ERROR, msg);
-		throw error;
+	private String getSObjectType() {
+		// Returns the value of the SObjectType from the current custom metadata record
+		// This is primarily stored in an EntityDefinition dropdown,
+		// but it can also be stored in a free text field, to support SObjects not listed in that dropdown
+		return this.currentJob?.SObjectType__r?.QualifiedApiName ?? this.currentJob?.SObjectTypeName__c;
 	}
 
 	private Benchmark__c initBenchmarkRecord() {
@@ -109,7 +123,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			JobLabel__c = this.currentJob?.MasterLabel,
 			JobName__c = this.currentJob?.DeveloperName,
 			Operation__c = this.currentJob?.Operation__c,
-			SObjectType__c = this.currentJob?.SObjectType__r?.QualifiedApiName
+			SObjectType__c = this.getSObjectType()
 		);
 	}
 
@@ -125,16 +139,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	private void captureErrorDetails(System.FinalizerContext context) {
-		// Record any errors that resulted in the process
-		if (context?.getResult() == System.ParentJobResult.UNHANDLED_EXCEPTION) {
-			System.Exception error = context?.getException();
-			this.benchmarkRecord.Error__c = error?.getTypeName();
-			this.benchmarkRecord.ErrorDetail__c = String.join(
-				new List<String>{ error?.getMessage(), error?.getStackTraceString() },
-				'\n'
-			);
-		}
+	private void logAndRethrow(Exception error) {
+		String msg = error + '\n' + error?.getStackTraceString();
+		System.debug(System.LoggingLevel.ERROR, msg);
+		throw error;
 	}
 
 	private Boolean shouldRun() {
@@ -145,7 +153,8 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	// **** INNER **** //
-	global virtual class Environment {
+	@TestVisible
+	private virtual class Environment {
 		// Responsible for determining the current environment type
 		// ie., Production vs. Sandbox, and if Sandbox, which one,
 		// as well as whether a given Benchmark Job is eligible to be run
