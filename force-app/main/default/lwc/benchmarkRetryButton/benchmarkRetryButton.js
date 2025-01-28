@@ -1,19 +1,21 @@
 import { LightningElement, api, wire } from "lwc";
+import { NavigationMixin } from "lightning/navigation";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { getRecord } from "lightning/uiRecordApi";
+import benchmarkObject from "@salesforce/schema/Benchmark__c";
 import jobNameField from "@salesforce/schema/Benchmark__c.JobName__c";
 import launch from "@salesforce/apex/BenchmarkLaunchUtility.launch";
 
 const COMPONENT = "c-benchmark-retry-button";
 
-export default class BenchmarkRetryButton extends LightningElement {
+export default class BenchmarkRetryButton extends NavigationMixin(LightningElement) {
 	@api recordId;
 
 	@api async invoke() {
 		try {
-			const jobId = await launch({ developerName: this.jobName });
-			console.info(COMPONENT, `New Benchmark Job Id: ${jobId}`);
+			await launch({ developerName: this.jobName });
 			this.showSuccessToast();
+			this.navigateToBenchmarksHome();
 		} catch (error) {
 			this.handleError(error);
 		}
@@ -38,6 +40,17 @@ export default class BenchmarkRetryButton extends LightningElement {
 			variant: "error"
 		});
 		this.dispatchEvent(event);
+	}
+
+	navigateToBenchmarksHome() {
+		// Navigate to the Benchmarks home page
+		this[NavigationMixin.Navigate]({
+			type: "standard__objectPage",
+			attributes: {
+				objectApiName: benchmarkObject?.objectApiName,
+				actionName: "home"
+			}
+		});
 	}
 
 	showSuccessToast() {
