@@ -4,16 +4,18 @@ import { getRecord } from "lightning/uiRecordApi";
 import jobNameField from "@salesforce/schema/Benchmark__c.JobName__c";
 import launch from "@salesforce/apex/BenchmarkLaunchUtility.launch";
 
+const COMPONENT = "c-benchmark-retry-button";
+
 export default class BenchmarkRetryButton extends LightningElement {
 	@api recordId;
 
 	@api async invoke() {
 		try {
 			const jobId = await launch({ developerName: this.jobName });
-			this.showSuccessToast(jobId);
+			console.info(COMPONENT, `New Benchmark Job Id: ${jobId}`);
+			this.showSuccessToast();
 		} catch (error) {
-			console.error(error);
-			this.showErrorToast(error);
+			this.handleError(error);
 		}
 	}
 
@@ -25,19 +27,23 @@ export default class BenchmarkRetryButton extends LightningElement {
 		return this.record ? this.record?.data?.fields[fieldName]?.value : undefined;
 	}
 
-	showErrorToast(error) {
+	handleError(error) {
+		// Extract the error message - this differs if it originated in JS or Apex:
+		const msg = error?.message ?? error?.body?.message;
+		// Log the error and throw a toast
+		console.error(COMPONENT, `Error: ${msg}`);
 		const event = new ShowToastEvent({
 			title: "Something went wrong...",
-			message: error,
+			message: msg,
 			variant: "error"
 		});
 		this.dispatchEvent(event);
 	}
 
-	showSuccessToast(jobId) {
+	showSuccessToast() {
 		const event = new ShowToastEvent({
-			title: `Launched ${this.jobName} via ${jobId}`,
-			message: "A new Benchmark record will be created in a few moments...",
+			title: `Launching ${this.jobName}...`,
+			message: "A new Benchmark record will be created in a few moments",
 			variant: "success"
 		});
 		this.dispatchEvent(event);
