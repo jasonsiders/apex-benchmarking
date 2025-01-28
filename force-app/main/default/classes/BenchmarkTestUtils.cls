@@ -30,7 +30,7 @@ global class BenchmarkTestUtils {
 	}
 
 	global static BenchmarkJobSetting__mdt initSetting() {
-		Type defaultClass = BenchmarkMocks.BenchmarkableExample.class;
+		Type defaultClass = BenchmarkMocks.Example.class;
 		return BenchmarkTestUtils.initSetting(defaultClass);
 	}
 
