@@ -4,7 +4,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 >
-    <label>BenchmarkOpportunityClosedWon</label>
+    <label>Opportunity: Closed Won</label>
     <protected>false</protected>
     <values>
         <field>Active__c</field>
@@ -16,9 +16,8 @@
     </values>
     <values>
         <field>Description__c</field>
-        <value
-			xsi:type="xsd:string"
-		>Benchmarks the time it takes to mark an Opportunity as &quot;Closed Won&quot;</value>
+        <value xsi:type="xsd:string">Benchmarks the time it takes to mark an Opportunity as &quot;Closed
+            Won&quot;</value>
     </values>
     <values>
         <field>ExcludedSandboxes__c</field>
