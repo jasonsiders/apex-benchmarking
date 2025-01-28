@@ -15,6 +15,6 @@ public without sharing class BenchmarkContactCreate implements Benchmarkable {
 	public void benchmark() {
 		// Create a Contact related to the Account
 		Contact testContact = new Contact(AccountId = this.accountId, FirstName = 'John', LastName = 'Doe');
-		insert testContact;
+		Database.insert(testContact, System.AccessLevel.SYSTEM_MODE);
 	}
 }
