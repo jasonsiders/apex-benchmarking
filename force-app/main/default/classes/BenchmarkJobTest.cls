@@ -3,7 +3,7 @@
 private class BenchmarkJobTest {
 	@IsTest
 	static void shouldRunAllBenchmarkJobs() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 
 		Test.startTest();
 		new BenchmarkJob()?.launch();
@@ -59,7 +59,25 @@ private class BenchmarkJobTest {
 	@IsTest
 	static void shouldRunSpecifiedBenchmarkJob() {
 		// Create a settings record to process
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
+
+		Test.startTest();
+		new BenchmarkJob(setting?.DeveloperName)?.launch();
+		Test.stopTest();
+
+		// Verify that the job saved the run results in a Benchmark record
+		List<Benchmark__c> results = BenchmarkJobTest.getResults();
+		Assert.areEqual(1, results?.size(), 'Wrong # of results');
+		Benchmark__c result = results?.get(0);
+		Assert.areEqual(setting?.DeveloperName, result?.JobName__c, 'Wrong JobName__c');
+	}
+
+	@IsTest
+	static void shouldRunWithFlows() {
+		// Create a settings record that uses an autolaunched flow, instead of an apex class
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
+		setting.ApexClass__c = null;
+		setting.Flow__c = 'My_Test_Flow';
 
 		Test.startTest();
 		new BenchmarkJob(setting?.DeveloperName)?.launch();
@@ -207,7 +225,7 @@ private class BenchmarkJobTest {
 
 	@IsTest
 	static void shouldHandleErrorsInFinalizer() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 		BenchmarkJob cursedJob = new JobWithErrorInFinalizer();
 
 		Id jobId;
@@ -270,7 +288,7 @@ private class BenchmarkJobTest {
 
 	@IsTest
 	static void shouldNotRunInProductionIfExcluded() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 		setting.RunInProduction__c = false;
 		// Simulate a production environment...
 		BenchmarkJob.environment = new BenchmarkMocks.ProductionEnvironment();
@@ -285,7 +303,7 @@ private class BenchmarkJobTest {
 
 	@IsTest
 	static void shouldNotRunInSandboxIfExcluded() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 		setting.ExcludedSandboxes__c = 'sandbox1,sandbox2,sandbox3';
 		// Simulate a specific sandbox environment
 		BenchmarkJob.environment = new BenchmarkMocks.SandboxEnvironment('sandbox2');

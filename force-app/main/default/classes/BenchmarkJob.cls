@@ -154,7 +154,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	private Benchmarkable initBenchmarkable() {
 		// Initialize a Benchmarkable instance, using the apex class name stored in the cmdt
-		String instanceName = this.currentJob?.ApexClass__c;
+		String instanceName = this.currentJob?.ApexClass__c ?? 'null';
 		Type instanceType = Type.forName(instanceName);
 		Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
 		if (instance != null) {
