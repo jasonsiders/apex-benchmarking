@@ -57,6 +57,22 @@ private class BenchmarkJobTest {
 	}
 
 	@IsTest
+	static void shouldRunSpecifiedBenchmarkJob() {
+		// Create a settings record to process
+		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkMocks.BenchmarkableExample.class);
+
+		Test.startTest();
+		new BenchmarkJob(setting?.DeveloperName)?.launch();
+		Test.stopTest();
+
+		// Verify that the job saved the run results in a Benchmark record
+		List<Benchmark__c> results = BenchmarkJobTest.getResults();
+		Assert.areEqual(1, results?.size(), 'Wrong # of results');
+		Benchmark__c result = results?.get(0);
+		Assert.areEqual(setting?.DeveloperName, result?.JobName__c, 'Wrong JobName__c');
+	}
+
+	@IsTest
 	static void shouldHandleErrorsDuringInSetupMethod() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting(BenchmarkJobTest.SetupFail.class);
 

@@ -22,6 +22,11 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		this.getNext();
 	}
 
+	global BenchmarkJob(String jobName) {
+		// This overload processes the specified Benchmark Job Settings record
+		this(new Set<String>{ jobName });
+	}
+
 	global BenchmarkJob() {
 		// This overload processes all defined Benchmark Job Settings records
 		this(BenchmarkJobSettingSelector.getAll()?.keySet());
