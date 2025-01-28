@@ -8,9 +8,25 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * and uses this instance to perform measurable tasks to be recorded in a Benchmark__c record.
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
+
+	// **** STATIC **** //
 	@TestVisible
 	private static Environment environment = new Environment();
 
+	global static void validate(String jobName) {
+		// Checks if the given job is active & eligible to be run in the current environment
+		// If not, throws an IneligibleJobException
+		BenchmarkJobSetting__mdt job = BenchmarkJobSettingSelector.get(jobName);
+		if (job != null && job?.Active__c == false) {
+			String msg = jobName + ' is inactive';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		} else if (job != null && BenchmarkJob.environment?.isEligible(job) == false) {
+			String msg = jobName + ' is ineligible to be run in this environment';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		}
+	}
+
+	// **** MEMBER **** //
 	private Benchmark__c benchmarkRecord;
 	private BenchmarkJobSetting__mdt currentJob;
 	private Map<String, BenchmarkJobSetting__mdt> pending;
@@ -105,14 +121,16 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.currentJob = BenchmarkJobSettingSelector.get(jobName);
 			// Remove the currentJob job from the list of pending jobs
 			this.pending?.remove(jobName);
-			// Validate that the job's settings record is still active
-			this.validateJob();
-			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
-			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
+			// Validate that the current settings record is active & eligible to be run in this environment
+			BenchmarkJob.validate(jobName);
+			// If an exception wasn't thrown, return the current job instance
 			return this;
 		} catch (BenchmarkJob.IneligibleJobException error) {
-			// If so, skip the currentJob job, and recurse to find the next job in the chain
+			// If so, skip the current job, and recurse to find the next job in the chain
 			return this.getNext();
+		} finally {
+			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
+			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
 		}
 	}
 
@@ -150,19 +168,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		String msg = error + '\n' + error?.getStackTraceString();
 		System.debug(System.LoggingLevel.ERROR, msg);
 		throw error;
-	}
-
-	private void validateJob() {
-		// Returns true if the current job is active & eligible to be run in the current environment
-		if (this.currentJob == null) {
-			return;
-		} else if (this.currentJob?.Active__c == false) {
-			String msg = this.currentJob?.DeveloperName + ' is inactive';
-			throw new BenchmarkJob.IneligibleJobException(msg);
-		} else if (BenchmarkJob.environment?.isEligible(this.currentJob) == false) {
-			String msg = this.currentJob?.DeveloperName + ' is ineligible to be run in this environment';
-			throw new BenchmarkJob.IneligibleJobException(msg);
-		}
 	}
 
 	// **** INNER **** //

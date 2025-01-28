@@ -4,10 +4,9 @@ private class BenchmarkLaunchUtilityTest {
 	@IsTest
 	static void shouldLaunchBenchmarkJob() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
-		String developerName = setting?.DeveloperName;
 
 		Test.startTest();
-		Id jobId = BenchmarkLaunchUtility.launch(developerName);
+		Id jobId = BenchmarkLaunchUtility.launch(setting?.DeveloperName);
 		Test.stopTest();
 
 		Assert.areNotEqual(null, jobId, 'A job was not lauched');
@@ -16,14 +15,14 @@ private class BenchmarkLaunchUtilityTest {
 	@IsTest
 	static void shouldHandleErrorsInAuraContext() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
-		String developerName = setting?.DeveloperName;
-		// Inject an error into the container logic
-		BenchmarkLaunchUtility.container = new BenchmarkLaunchUtilityTest.ErrorContainer();
+		// Mark the job as inactive - this will cause a BenchmarkJob.IneligibleJobException to be thrown
+		setting.Active__c = false;
+		// Ensure the current quiddity is AURA
 		BenchmarkLaunchUtility.context = System.Quiddity.AURA;
 
 		Test.startTest();
 		try {
-			Id jobId = BenchmarkLaunchUtility.launch(developerName);
+			BenchmarkLaunchUtility.launch(setting?.DeveloperName);
 			Assert.fail('Did not throw an error');
 		} catch (System.AuraHandledException error) {
 			// As expected!
@@ -34,28 +33,20 @@ private class BenchmarkLaunchUtilityTest {
 	@IsTest
 	static void shouldHandleErrorsOutsideOfAuraContext() {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
-		String developerName = setting?.DeveloperName;
-		// Inject an error into the container logic
-		BenchmarkLaunchUtility.container = new BenchmarkLaunchUtilityTest.ErrorContainer();
+		// Mark the job as inactive - this will cause a BenchmarkJob.IneligibleJobException to be thrown
+		setting.Active__c = false;
+		// Ensure the current quiddity is not AURA
 		BenchmarkLaunchUtility.context = System.Quiddity.UNDEFINED;
 
 		Test.startTest();
 		try {
-			Id jobId = BenchmarkLaunchUtility.launch(developerName);
+			BenchmarkLaunchUtility.launch(setting?.DeveloperName);
 			Assert.fail('Did not throw an error');
-		} catch (System.AuraHandledException error) {
+		} catch (System.AuraHandledException auraError) {
 			Assert.fail('Should not have cast to AuraHandledException');
-		} catch (Exception error) {
+		} catch (BenchmarkJob.IneligibleJobException benchmarkError) {
 			// As expected...
 		}
 		Test.stopTest();
-	}
-
-	// **** INNER **** //
-	private class ErrorContainer extends BenchmarkLaunchUtility.Container {
-		// Use this class to simulate failures in the container logic
-		public override Id runJob(String developerName) {
-			throw new System.NoSuchElementException('Mock Exception!');
-		}
 	}
 }
