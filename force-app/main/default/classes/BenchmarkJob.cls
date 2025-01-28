@@ -8,9 +8,25 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * and uses this instance to perform measurable tasks to be recorded in a Benchmark__c record.
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
+
+	// **** STATIC **** //
 	@TestVisible
 	private static Environment environment = new Environment();
 
+	global static void validate(String jobName) {
+		// Checks if the given job is active & eligible to be run in the current environment
+		// If not, throws an IneligibleJobException
+		BenchmarkJobSetting__mdt job = BenchmarkJobSettingSelector.get(jobName);
+		if (job != null && job?.Active__c == false) {
+			String msg = jobName + ' is inactive';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		} else if (job != null && BenchmarkJob.environment?.isEligible(job) == false) {
+			String msg = jobName + ' is ineligible to be run in this environment';
+			throw new BenchmarkJob.IneligibleJobException(msg);
+		}
+	}
+
+	// **** MEMBER **** //
 	private Benchmark__c benchmarkRecord;
 	private BenchmarkJobSetting__mdt currentJob;
 	private Map<String, BenchmarkJobSetting__mdt> pending;
@@ -20,6 +36,11 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		// and load the first active one for processing
 		this.pending = BenchmarkJobSettingSelector.get(jobNames);
 		this.getNext();
+	}
+
+	global BenchmarkJob(String jobName) {
+		// This overload processes the specified Benchmark Job Settings record
+		this(new Set<String>{ jobName });
 	}
 
 	global BenchmarkJob() {
@@ -94,19 +115,23 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	private BenchmarkJob getNext() {
-		// Get the next BenchmarkJobSetting__mdt to process
-		String jobName = (this.pending?.isEmpty() == false) ? this.pending?.values()?.get(0)?.DeveloperName : null;
-		this.currentJob = BenchmarkJobSettingSelector.get(jobName);
-		// Remove the currentJob job from the list of pending jobs
-		this.pending?.remove(jobName);
-		// Validate that the job's settings record is still active
-		if (this.currentJob != null && this.shouldRun() == false) {
-			// If so, skip the currentJob job, and recurse to find the next job in the chain
-			this.getNext();
+		try {
+			// Get the next BenchmarkJobSetting__mdt to process
+			String jobName = (this.pending?.isEmpty() == false) ? this.pending?.values()?.get(0)?.DeveloperName : null;
+			this.currentJob = BenchmarkJobSettingSelector.get(jobName);
+			// Remove the currentJob job from the list of pending jobs
+			this.pending?.remove(jobName);
+			// Validate that the current settings record is active & eligible to be run in this environment
+			BenchmarkJob.validate(jobName);
+			// If an exception wasn't thrown, return the current job instance
+			return this;
+		} catch (BenchmarkJob.IneligibleJobException error) {
+			// If so, skip the current job, and recurse to find the next job in the chain
+			return this.getNext();
+		} finally {
+			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
+			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
 		}
-		System.debug(System.LoggingLevel.FINEST, 'Next GarbageCollector__mdt job: ' + this.currentJob?.DeveloperName);
-		System.debug(System.LoggingLevel.FINEST, 'Pending GarbageCollector__mdt jobs: ' + this.pending?.keySet());
-		return this;
 	}
 
 	private String getSObjectType() {
@@ -145,14 +170,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		throw error;
 	}
 
-	private Boolean shouldRun() {
-		// Returns true if the current job is active & eligible to be run in the current environment
-		Boolean result = (this.currentJob?.Active__c == true && BenchmarkJob.environment?.isEligible(this.currentJob));
-		System.debug(LoggingLevel.FINEST, this.currentJob?.DeveloperName + ' is eligible? ' + result);
-		return result;
+	// **** INNER **** //
+	global class IneligibleJobException extends Exception {
 	}
 
-	// **** INNER **** //
 	@TestVisible
 	private virtual class Environment {
 		// Responsible for determining the current environment type
