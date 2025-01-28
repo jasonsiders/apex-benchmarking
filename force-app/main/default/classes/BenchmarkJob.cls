@@ -29,11 +29,12 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	// **** MEMBER **** //
+	// **** MEMBERS **** //
 	private Benchmark__c benchmarkRecord;
 	private BenchmarkJobSetting__mdt currentJob;
 	private Map<String, BenchmarkJobSetting__mdt> pending;
 
+	// **** CONSTRUCTORS **** //
 	global BenchmarkJob(Set<String> jobNames) {
 		// Retrieve the specified list of Benchmark Job Setting records,
 		// and load the first active one for processing
@@ -51,6 +52,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		this(BenchmarkJobSettingSelector.getAll()?.keySet());
 	}
 
+	// **** METHODS **** //
 	global void execute(System.QueueableContext context) {
 		System.Savepoint savepoint = Database.setSavepoint();
 		try {
@@ -155,6 +157,8 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	// **** INNER **** //
 	private abstract class AbstractProcessor {
+		// This class contains logic central to the processing of Benchmark Jobs,
+		// regardless of how these jobs are run (Apex or Flow)
 		protected BenchmarkJobSetting__mdt setting;
 		protected Benchmark__c record;
 
@@ -200,6 +204,34 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	@TestVisible
+	private virtual class Environment {
+		// Responsible for determining the current environment type
+		// ie., Production vs. Sandbox, and if Sandbox, which one,
+		// as well as whether a given Benchmark Job is eligible to be run
+		public virtual String getSandboxName() {
+			System.Url url = System.Url.getOrgDomainUrl();
+			return System.DomainParser.parse(url)?.getSandboxName();
+		}
+
+		public Boolean isEligible(BenchmarkJobSetting__mdt setting) {
+			if (this.isSandbox() == true) {
+				// Check the configured list of excluded sandboxes to see if the current one is listed
+				String currentSandbox = this.getSandboxName();
+				String excluded = setting?.ExcludedSandboxes__c?.deleteWhitespace();
+				List<String> blacklist = excluded?.split('\\,') ?? new List<String>();
+				return new Set<String>(blacklist)?.contains(currentSandbox) == false;
+			} else {
+				// Only run if "Run in Production" is checked
+				return setting?.RunInProduction__c == true;
+			}
+		}
+
+		public Boolean isSandbox() {
+			return this.getSandboxName() != null;
+		}
+	}
+
+	@TestVisible
 	private virtual class FlowProcessor extends AbstractProcessor {
 		public FlowProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
 			super(setting, record);
@@ -228,6 +260,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	@TestVisible
 	private virtual class FlowRunner {
+		// This class provides a simple interface for interacting with autolaunched flows from apex
 		public void run(String flowName) {
 			Flow.Interview interview = this.createInterview(flowName);
 			interview?.start();
@@ -253,34 +286,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			if (error != null) {
 				throw new System.FlowException(error);
 			}
-		}
-	}
-
-	@TestVisible
-	private virtual class Environment {
-		// Responsible for determining the current environment type
-		// ie., Production vs. Sandbox, and if Sandbox, which one,
-		// as well as whether a given Benchmark Job is eligible to be run
-		public virtual String getSandboxName() {
-			System.Url url = System.Url.getOrgDomainUrl();
-			return System.DomainParser.parse(url)?.getSandboxName();
-		}
-
-		public Boolean isEligible(BenchmarkJobSetting__mdt setting) {
-			if (this.isSandbox() == true) {
-				// Check the configured list of excluded sandboxes to see if the current one is listed
-				String currentSandbox = this.getSandboxName();
-				String excluded = setting?.ExcludedSandboxes__c?.deleteWhitespace();
-				List<String> blacklist = excluded?.split('\\,') ?? new List<String>();
-				return new Set<String>(blacklist)?.contains(currentSandbox) == false;
-			} else {
-				// Only run if "Run in Production" is checked
-				return setting?.RunInProduction__c == true;
-			}
-		}
-
-		public Boolean isSandbox() {
-			return this.getSandboxName() != null;
 		}
 	}
 
