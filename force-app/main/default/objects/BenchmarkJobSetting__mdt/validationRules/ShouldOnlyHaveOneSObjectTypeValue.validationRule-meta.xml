@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ShouldOnlyHaveOneSObjectTypeValue</fullName>
+    <active>true</active>
+    <description
+	>Developers should either specify an SObjectType via the dropdown, or the free text field - but not both</description>
+    <errorConditionFormula>OR(
+  NOT(ISBLANK(TEXT(SObjectType__c))) &amp;&amp; NOT(ISBLANK(SObjectTypeName__c)),
+  ISBLANK(TEXT(SObjectType__c)) &amp;&amp; ISBLANK(SObjectTypeName__c)
+)</errorConditionFormula>
+    <errorDisplayField>SObjectType__c</errorDisplayField>
+    <errorMessage
+	>Please specify an SObjectType, using either the dropdown or the free-text field - but not both.</errorMessage>
+</ValidationRule>
