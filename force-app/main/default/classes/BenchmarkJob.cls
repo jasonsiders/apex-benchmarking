@@ -10,6 +10,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 **/
 
 	// **** STATIC **** //
+	private static final String FLOW_ERROR_PROPERTY = 'error';
 	@TestVisible
 	private static Environment environment = new Environment();
 
@@ -52,14 +53,19 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		System.Savepoint savepoint = Database.setSavepoint();
 		try {
 			System.attachFinalizer(this);
-			this.benchmarkRecord = this.initBenchmarkRecord();
-			Benchmarkable instance = this.initBenchmarkable();
-			this.doSetup(instance);
-			this.doBenchmark(instance);
+			this.initBenchmarkRecord();
+			AbstractProcessor processor = this.initProcessor();
+			processor?.process();
 		} catch (Exception error) {
 			this.logAndRethrow(error);
 		} finally {
 			Database.rollback(savepoint);
+			System.debug(
+				LoggingLevel.FINEST,
+				this.currentJob?.DeveloperName +
+					' finished. Benchmark Record: ' +
+					JSON.serializePretty(this.benchmarkRecord)
+			);
 		}
 	}
 
@@ -101,19 +107,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	private void doBenchmark(Benchmarkable instance) {
-		this.benchmarkRecord.BenchmarkStartedAt__c = Limits.getCpuTime();
-		instance?.benchmark();
-		this.benchmarkRecord.BenchmarkCompletedAt__c = Limits.getCpuTime();
-	}
-
-	private void doSetup(Benchmarkable instance) {
-		// Run the current instance's setup method
-		this.benchmarkRecord.SetupStartedAt__c = Limits.getCpuTime();
-		instance?.setup();
-		this.benchmarkRecord.SetupCompletedAt__c = Limits.getCpuTime();
-	}
-
 	private BenchmarkJob getNext() {
 		try {
 			// Get the next BenchmarkJobSetting__mdt to process
@@ -134,16 +127,16 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 	}
 
-	private String getSObjectType() {
+	protected String getSObjectType() {
 		// Returns the value of the SObjectType from the current custom metadata record
 		// This is primarily stored in an EntityDefinition dropdown,
 		// but it can also be stored in a free text field, to support SObjects not listed in that dropdown
 		return this.currentJob?.SObjectType__r?.QualifiedApiName ?? this.currentJob?.SObjectTypeName__c;
 	}
 
-	private Benchmark__c initBenchmarkRecord() {
+	protected void initBenchmarkRecord() {
 		// Create a benchmark record based on the details of the corresponding cmdt record
-		return new Benchmark__c(
+		this.benchmarkRecord = new Benchmark__c(
 			Description__c = this.currentJob?.Description__c,
 			JobLabel__c = this.currentJob?.MasterLabel,
 			JobName__c = this.currentJob?.DeveloperName,
@@ -152,16 +145,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		);
 	}
 
-	private Benchmarkable initBenchmarkable() {
-		// Initialize a Benchmarkable instance, using the apex class name stored in the cmdt
-		String instanceName = this.currentJob?.ApexClass__c ?? 'null';
-		Type instanceType = Type.forName(instanceName);
-		Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
-		if (instance != null) {
-			return instance;
-		} else {
-			throw new System.IllegalArgumentException(instanceName + ' is not of type Benchmarkable');
-		}
+	private AbstractProcessor initProcessor() {
+		return (String.isNotBlank(this.currentJob?.ApexClass__c))
+			? (AbstractProcessor) new ApexProcessor(this.currentJob, this.benchmarkRecord)
+			: (AbstractProcessor) new FlowProcessor(this.currentJob, this.benchmarkRecord);
 	}
 
 	private void logAndRethrow(Exception error) {
@@ -171,7 +158,84 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	// **** INNER **** //
-	global class IneligibleJobException extends Exception {
+	private abstract class AbstractProcessor {
+		protected BenchmarkJobSetting__mdt setting;
+		protected Benchmark__c record;
+
+		protected AbstractProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
+			this.setting = setting;
+			this.record = record;
+		}
+
+		public abstract void process();
+
+		protected void stamp(SObjectField field) {
+			// Use this method to record the current Limits.getCpuTime() value on a certain SObjectField
+			this.record?.put(field, Limits.getCpuTime());
+		}
+	}
+
+	private class ApexProcessor extends AbstractProcessor {
+		public ApexProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
+			super(setting, record);
+		}
+
+		public override void process() {
+			Benchmarkable instance = this.initBenchmarkable();
+			this.stamp(Benchmark__c.SetupStartedAt__c);
+			instance?.setup();
+			this.stamp(Benchmark__c.SetupCompletedAt__c);
+			this.stamp(Benchmark__c.BenchmarkStartedAt__c);
+			instance?.benchmark();
+			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
+		}
+
+		private Benchmarkable initBenchmarkable() {
+			// Initialize a Benchmarkable instance, using the apex class name stored in the cmdt
+			String instanceName = this.setting?.ApexClass__c ?? 'null';
+			Type instanceType = Type.forName(instanceName);
+			Benchmarkable instance = (Benchmarkable) instanceType?.newInstance();
+			if (instance != null) {
+				return instance;
+			} else {
+				throw new System.IllegalArgumentException(instanceName + ' is not of type Benchmarkable');
+			}
+		}
+	}
+
+	@TestVisible
+	private virtual class FlowProcessor extends AbstractProcessor {
+		public FlowProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
+			super(setting, record);
+			// Store a reference to the current Benchmark Record for the InvocableStartBenchmark class to reference
+			InvocableStartBenchmark.currentRecord = this.record;
+		}
+
+		public override virtual void process() {
+			this.stamp(Benchmark__c.SetupStartedAt__c);
+			String flowName = this.setting?.Flow__c;
+			Flow.Interview flow = Flow.Interview.createInterview(flowName, new Map<String, Object>{});
+			flow.start();
+			this.checkForErrors(flow);
+			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
+			this.reconcileTimestamps();
+		}
+
+		private void checkForErrors(Flow.Interview flow) {
+			String errorMessage = (String) flow?.getVariableValue(FLOW_ERROR_PROPERTY);
+			if (errorMessage != null) {
+				throw new System.FlowException(errorMessage);
+			}
+		}
+
+		private void reconcileTimestamps() {
+			// Subscribers are expected to use the InvocableStartBenchmark class
+			// to set the SetupCompletedAt__c and BenchmarkStartedAt__c values
+			// If they fail to do this, provide default values instead of leaving null
+			Decimal defaultValue = this.record?.SetupStartedAt__c;
+			this.record.SetupCompletedAt__c = this.record.SetupCompletedAt__c ?? defaultValue;
+			this.record.BenchmarkStartedAt__c = this.record.BenchmarkStartedAt__c ?? defaultValue;
+		}
 	}
 
 	@TestVisible
@@ -200,5 +264,8 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		public Boolean isSandbox() {
 			return this.getSandboxName() != null;
 		}
+	}
+
+	global class IneligibleJobException extends Exception {
 	}
 }
