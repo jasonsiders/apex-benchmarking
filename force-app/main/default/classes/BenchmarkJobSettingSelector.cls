@@ -54,10 +54,12 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 				Description__c,
 				DeveloperName,
 				ExcludedSandboxes__c,
+				Flow__c,
 				MasterLabel,
 				Operation__c,
 				RunInProduction__c,
-				SObjectType__r.QualifiedApiName
+				SObjectType__r.QualifiedApiName,
+				SObjectTypeName__c
 			FROM BenchmarkJobSetting__mdt
 			WITH SYSTEM_MODE
 		];
