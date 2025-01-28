@@ -343,6 +343,7 @@ private class BenchmarkJobTest {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 		setting.ApexClass__c = null;
 		setting.Flow__c = 'My_Test_Flow';
+		// Simulate a flow with an unhandled error
 		BenchmarkJob.FlowRunner = new BenchmarkJobTest.MockFlowWithUnhandledError();
 
 		try {
@@ -372,6 +373,7 @@ private class BenchmarkJobTest {
 		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
 		setting.ApexClass__c = null;
 		setting.Flow__c = 'My_Test_Flow';
+		// Simulate a flow with a caught/properly handled error
 		BenchmarkJob.FlowRunner = new BenchmarkJobTest.MockFlowWithHandledError();
 
 		try {

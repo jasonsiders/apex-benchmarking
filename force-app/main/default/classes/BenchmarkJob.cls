@@ -176,6 +176,9 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	private class ApexProcessor extends AbstractProcessor {
+		// This class is responsible for processing Benchmark Jobs with an ApexClass__c value
+		// The listed Apex Class is instantiated as a Benchmarkable object, and then its methods are called
+		// Along the way, the processor records start & stop times for each step.
 		public ApexProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
 			super(setting, record);
 		}
@@ -233,6 +236,12 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	@TestVisible
 	private virtual class FlowProcessor extends AbstractProcessor {
+		// This class is responsible for processing Benchmark Jobs with a Flow__c value
+		// The listed Flow is dynamically instantiated and ran
+		// Before the flow runs, the SetupStartedAt__c value is set;
+		// After the flow runs, the BenchmarkCompletedAt__c value is set
+		// Developers must use the InvocableStartBenchmark class
+		// to set values for SetupCompletedAt__c & BenchmarkStartedAt__c
 		public FlowProcessor(BenchmarkJobSetting__mdt setting, Benchmark__c record) {
 			super(setting, record);
 			// Store a reference to the current Benchmark Record for the InvocableStartBenchmark class to reference
@@ -261,6 +270,8 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	@TestVisible
 	private virtual class FlowRunner {
 		// This class provides a simple interface for interacting with autolaunched flows from apex
+		// It's mostly used to give tests a seam to mock Flow execution,
+		// since this package currently does not contain any flows
 		public void run(String flowName) {
 			Flow.Interview interview = this.createInterview(flowName);
 			interview?.start();
@@ -290,5 +301,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	}
 
 	global class IneligibleJobException extends Exception {
+		// This Exception indicates that an instance of a Benchmark Job is ineligible to be run
+		// It could be thrown if any of the following are true:
+		// - The job is not "Active__c"
+		// - The job does not have "RunInProduction__c", and it's in a Production environment
+		// - The current Sandbox environment is listed in "ExcludedSandboxes__c"
 	}
 }
