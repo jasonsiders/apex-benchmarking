@@ -12,7 +12,9 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	// **** STATIC **** //
 	private static final String FLOW_ERROR_PROPERTY = 'error';
 	@TestVisible
-	private static Environment environment = new Environment();
+	private static Environment Environment = new BenchmarkJob.Environment();
+	@TestVisible
+	private static FlowRunner FlowRunner = new BenchmarkJob.FlowRunner();
 
 	global static void validate(String jobName) {
 		// Checks if the given job is active & eligible to be run in the current environment
@@ -60,12 +62,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.logAndRethrow(error);
 		} finally {
 			Database.rollback(savepoint);
-			System.debug(
-				LoggingLevel.FINEST,
-				this.currentJob?.DeveloperName +
-					' finished. Benchmark Record: ' +
-					JSON.serializePretty(this.benchmarkRecord)
-			);
 		}
 	}
 
@@ -214,27 +210,49 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		public override virtual void process() {
 			this.stamp(Benchmark__c.SetupStartedAt__c);
 			String flowName = this.setting?.Flow__c;
-			Flow.Interview flow = Flow.Interview.createInterview(flowName, new Map<String, Object>{});
-			flow.start();
-			this.checkForErrors(flow);
+			BenchmarkJob.flowRunner?.run(flowName);
 			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
 			this.reconcileTimestamps();
 		}
 
-		private void checkForErrors(Flow.Interview flow) {
-			String errorMessage = (String) flow?.getVariableValue(FLOW_ERROR_PROPERTY);
-			if (errorMessage != null) {
-				throw new System.FlowException(errorMessage);
-			}
-		}
-
 		private void reconcileTimestamps() {
-			// Subscribers are expected to use the InvocableStartBenchmark class
-			// to set the SetupCompletedAt__c and BenchmarkStartedAt__c values
+			// This class automatically adds the SetupStartedAt__c and BenchmarkCompletedAt__c timestamps,
+			// but relies on subscribers to use the InvocableBenchmarkStart class
+			// to manually set the SetupCompletedAt__c and BenchmarkStartedAt__c timestamps.
 			// If they fail to do this, provide default values instead of leaving null
 			Decimal defaultValue = this.record?.SetupStartedAt__c;
 			this.record.SetupCompletedAt__c = this.record.SetupCompletedAt__c ?? defaultValue;
 			this.record.BenchmarkStartedAt__c = this.record.BenchmarkStartedAt__c ?? defaultValue;
+		}
+	}
+
+	@TestVisible
+	private virtual class FlowRunner {
+		public void run(String flowName) {
+			Flow.Interview interview = this.createInterview(flowName);
+			interview?.start();
+			this.handleFlowErrors(interview);
+		}
+
+		protected virtual Flow.Interview createInterview(String flowName) {
+			return Flow.Interview.createInterview(flowName, new Map<String, Object>{});
+		}
+
+		protected virtual String getFlowErrors(Flow.Interview interview) {
+			// Retrieves an error message stored in the FLOW_ERROR_PROPERTY
+			return (String) interview?.getVariableValue(FLOW_ERROR_PROPERTY);
+		}
+
+		protected void handleFlowErrors(Flow.Interview interview) {
+			// Note: By default, flows throw a generic System.FlowException: "An unhandled fault has occurred".
+			// To get a readable error message, subscribers should use a fault path to store the {!$Flow.FaultMessage}
+			// in an output property, named in the FLOW_ERROR_PROPERTY constant.
+			// The class will retrieve the value of this error property after running the flow.
+			// If the error property has a value, use it to generate/throw a System.FlowException.
+			String error = this.getFlowErrors(interview);
+			if (error != null) {
+				throw new System.FlowException(error);
+			}
 		}
 	}
 
