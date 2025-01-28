@@ -4,8 +4,8 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * The BenchmarkJob queueable runs on the BenchmarkJobSetting__mdt custom metadata type.
 	 * Each record represents a single job to be run, and will invoke 1 Queueable run,
 	 * provided that it is active & eligible to be run in the current environment.
-	 * The BenchmarkJob dynamically instantiates a Benchmarkable instance,
-	 * and uses this instance to perform measurable tasks to be recorded in a Benchmark__c record.
+	 * The BenchmarkJob dynamically instantiates a "Benchmarkable" Apex Clas, or a Flow (depending on the configuration).
+	 * It uses this artifact to perform measurable tasks to be recorded in a Benchmark__c record.
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
 
