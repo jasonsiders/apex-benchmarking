@@ -6,6 +6,7 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 	 * Instead, use the global "BenchmarkTestUtils" class methods to mock settings
 	 **/
 
+	// **** STATIC **** //
 	@TestVisible
 	private static Map<String, BenchmarkJobSetting__mdt> settings;
 
@@ -13,7 +14,6 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 		// This method uses lazy-initialization to retrieve all defined BenchmarkJobSetting__mdt records in the org
 		// Successive calls to this method will return the results from the first time it was called
 		settings = settings ?? BenchmarkJobSettingSelector.retrieveFromOrg();
-		System.debug(LoggingLevel.FINEST, 'All BenchmarkJobSetting__mdt: ' + settings?.values());
 		return settings;
 	}
 

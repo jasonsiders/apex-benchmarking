@@ -13,7 +13,7 @@ global class BenchmarkLaunchUtility {
 			BenchmarkJob.validate(developerName);
 			return new BenchmarkJob(developerName)?.launch();
 		} catch (Exception error) {
-			System.debug(LoggingLevel.ERROR, error + '\n' + error?.getStackTraceString());
+			BenchmarkLogs.LOGGER?.log(LoggingLevel.ERROR, error + '\n' + error?.getStackTraceString());
 			// Cast the error to an AuraHandledException if currently in an Aura/LWC context, and re-throw
 			throw (BenchmarkLaunchUtility.context == System.Quiddity.AURA)
 				? new System.AuraHandledException(error?.getMessage())

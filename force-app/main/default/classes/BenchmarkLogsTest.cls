@@ -12,7 +12,7 @@ private class BenchmarkLogsTest {
 		insert setting;
 
 		Test.startTest();
-		BenchmarkLogs.Adapter adapter = BenchmarkLogs.init();
+		BenchmarkLogs.Adapter adapter = BenchmarkLogs.LOGGER;
 		Test.stopTest();
 
 		Assert.areNotEqual(null, adapter, 'Returned null BenchmarkLogs.Adapter');
@@ -28,7 +28,7 @@ private class BenchmarkLogsTest {
 		insert setting;
 
 		Test.startTest();
-		BenchmarkLogs.Adapter adapter = BenchmarkLogs.init();
+		BenchmarkLogs.Adapter adapter = BenchmarkLogs.LOGGER;
 		Test.stopTest();
 
 		Assert.areNotEqual(null, adapter, 'Returned null BenchmarkLogs.Adapter');
@@ -38,7 +38,7 @@ private class BenchmarkLogsTest {
 	@IsTest
 	static void shouldUseDefaultLoggerIfNoSettingsDefined() {
 		Test.startTest();
-		BenchmarkLogs.Adapter adapter = BenchmarkLogs.init();
+		BenchmarkLogs.Adapter adapter = BenchmarkLogs.LOGGER;
 		Test.stopTest();
 
 		Assert.areNotEqual(null, adapter, 'Returned null BenchmarkLogs.Adapter');
@@ -51,7 +51,7 @@ private class BenchmarkLogsTest {
 		insert setting;
 
 		Test.startTest();
-		BenchmarkLogs.Adapter adapter = BenchmarkLogs.init();
+		BenchmarkLogs.Adapter adapter = BenchmarkLogs.LOGGER;
 		Test.stopTest();
 
 		Assert.areNotEqual(null, adapter, 'Returned null BenchmarkLogs.Adapter');
@@ -67,7 +67,7 @@ private class BenchmarkLogsTest {
 		insert setting;
 
 		Test.startTest();
-		BenchmarkLogs.Adapter adapter = BenchmarkLogs.init();
+		BenchmarkLogs.Adapter adapter = BenchmarkLogs.LOGGER;
 		Test.stopTest();
 
 		Assert.areNotEqual(null, adapter, 'Returned null BenchmarkLogs.Adapter');

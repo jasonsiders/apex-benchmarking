@@ -9,8 +9,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
 
-	// **** STATIC **** //
+	// **** CONSTANT **** //
 	private static final String FLOW_ERROR_PROPERTY = 'error';
+
+	// **** STATIC **** //
 	@TestVisible
 	private static Environment environment = new BenchmarkJob.Environment();
 	@TestVisible
@@ -64,6 +66,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.logAndRethrow(error);
 		} finally {
 			Database.rollback(savepoint);
+			BenchmarkLogs.LOGGER?.save();
 		}
 	}
 
@@ -73,19 +76,22 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			if (this.benchmarkRecord != null) {
 				this.captureErrorDetails(context);
 				Database.insert(this.benchmarkRecord, System.AccessLevel.SYSTEM_MODE);
-				System.debug(LoggingLevel.FINEST, 'Saved Benchmark: ' + this.benchmarkRecord);
+				BenchmarkLogs.LOGGER?.log(LoggingLevel.FINEST, 'Saved Benchmark: ' + this.benchmarkRecord);
 			}
 			// Launch the next iteration of the job
 			this.getNext()?.launch();
 		} catch (Exception error) {
 			this.logAndRethrow(error);
+		} finally {
+			BenchmarkLogs.LOGGER?.save();
 		}
 	}
 
 	global virtual Id launch() {
 		if (this.currentJob != null) {
 			Id jobId = System.enqueueJob(this);
-			System.debug(System.LoggingLevel.FINEST, 'Launching new job: ' + jobId);
+			BenchmarkLogs.LOGGER?.log(System.LoggingLevel.FINEST, 'Launching new job: ' + jobId);
+			BenchmarkLogs.LOGGER?.save();
 			return jobId;
 		} else {
 			return null;
@@ -120,8 +126,9 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			// If so, skip the current job, and recurse to find the next job in the chain
 			return this.getNext();
 		} finally {
-			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
-			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
+			BenchmarkLogs.LOGGER
+				?.log(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
+			BenchmarkLogs.LOGGER?.log(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
 		}
 	}
 
@@ -156,7 +163,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	private void logAndRethrow(Exception error) {
 		String msg = error + '\n' + error?.getStackTraceString();
-		System.debug(System.LoggingLevel.ERROR, msg);
+		BenchmarkLogs.LOGGER?.log(System.LoggingLevel.ERROR, msg);
 		throw error;
 	}
 

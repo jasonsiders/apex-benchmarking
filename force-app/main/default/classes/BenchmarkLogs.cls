@@ -7,8 +7,10 @@ global abstract class BenchmarkLogs {
 	 * If no plugin is defined, logs are committed to traditional Salesforce debug logs by default.
 	 **/
 	private static final BenchmarkLogs.Adapter DEFAULT_ADAPTER = new DefaultLogger();
+	global static final BenchmarkLogs.Adapter LOGGER = BenchmarkLogs.init();
 
-	global static BenchmarkLogs.Adapter init() {
+	// **** PRIVATE **** //
+	private static BenchmarkLogs.Adapter init() {
 		try {
 			// Returns a logger plugin defined in Benchmark Settings
 			// If none defined or invalid, return a default logger which prints to traditional debug logs
