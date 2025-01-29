@@ -1,15 +1,13 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.ApexDoc, PMD.AvoidGlobalModifier')
 @IsTest
 global class BenchmarkTestUtils {
 	global static List<AsyncApexJob> getAsyncJobs() {
 		// Retrieve any BenchmarkJobs that were enqueued and/or run
-		List<AsyncApexJob> jobs = [
+		return [
 			SELECT Id, ApexClass.Name, JobType, Status, CreatedDate
 			FROM AsyncApexJob
 			WHERE JobType = 'Queueable' AND ApexClass.Name LIKE 'Benchmark%'
 		];
-		System.debug(LoggingLevel.FINEST, 'AsyncApexJobs: ' + JSON.serializePretty(jobs));
-		return jobs;
 	}
 
 	global static BenchmarkJobSetting__mdt initSetting(Type apexClass, String developerName) {
@@ -30,7 +28,7 @@ global class BenchmarkTestUtils {
 	}
 
 	global static BenchmarkJobSetting__mdt initSetting() {
-		Type defaultClass = BenchmarkMocks.BenchmarkableExample.class;
+		Type defaultClass = BenchmarkMocks.Example.class;
 		return BenchmarkTestUtils.initSetting(defaultClass);
 	}
 

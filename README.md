@@ -51,11 +51,32 @@ Once the package is installed, follow these steps to get started:
 
 ### Creating Benchmark Jobs
 
-Each run of the Benchmark Job creates a `Benchmarkable` instance, using the Apex Class name specified in the `BenchmarkJobSetting__mdt.ApexClass__c` field. The framework uses this class to setup and execute the logic to be benchmarked, and then stores details about the run in the `Benchmark__c` custom object.
+#### Step 1: Create a `BenchmarkJobSetting__mdt` Record
 
-To create your own test cases for benchmarking, follow these two simple steps:
+Every Benchmark Job requires a corresponding `BenchmarkJobSetting__mdt` record. This custom metadata type defines the configuration for the job:
 
-#### Step 1: Create a `Benchmarkable` Instance
+![A sample BenchmarkJobSetting__mdt record](media/benchmark_job_settings.png)
+
+Each record will be linked to an `Apex Class` or a `Flow`, either of which will be dynamically instantiated and run during a run of the Benchmark Job for the current settings record.
+
+You can also include optional details about the job, such as the `SObjectType` and the type of `Operation` being performed or benchmarked. These details will be recorded in the resulting `Benchmark__c` records and can be helpful for reporting.
+
+You can also use this record to configure where and when Benchmark jobs should run:
+
+- **Active:** If unchecked, the specified Benchmark job will not run. If checked, the job will run, as long as it’s eligible in the current environment (see below).
+- **Excluded Sandbox(es):** A comma-separated list of sandbox names (e.g., `full`, `partial`, `uat`). The specified Benchmark job will not run in these sandboxes.
+- **Run In Production?:** If checked, the Benchmark job will run in Production (and Developer Edition) orgs. By default, this is `false`.
+
+> _:rotating_light: **IMPORTANT**: Each Benchmark Job is rolled back at the end of the transaction. However, some actions (such as "deliver immediately" Platform Events, API calls, etc.) cannot be rolled back. For this reason, use extreme caution if you choose to set `Run in Production` to true._
+
+#### Step 2: Defining Benchmark Job Logic
+
+You can use Apex _or Flows_ to define the logic to be executed during your Benchmark Jobs. Expand each of the sections below for more information:
+
+<details>
+  <summary>Using Apex:</summary>
+  
+If the `BenchmarkJobSetting__mdt` includes an `ApexClass__c` value, then each run of the given Benchmark Job will use that value to dynamically create a `Benchmarkable` instance. The framework then uses this class to setup and execute the logic to be benchmarked, and then stores details about the run in the `Benchmark__c` custom object.
 
 The `Benchmarkable` interface requires two methods:
 
@@ -63,6 +84,8 @@ The `Benchmarkable` interface requires two methods:
 - `void benchmark()`: Executes the specific action to be measured by the Benchmark Job.
 
 For accurate results, the `benchmark()` method should focus solely on the action being measured. Avoid including unnecessary code—use the `setup()` method for any pre-processing instead.
+
+> **Note:** You do not need to worry about recording when the `setup()` and `benchmark()` methods start/finish; this happens automatically when using Apex.
 
 Here is an example implementation that measures the time it takes to create a `Contact` record.
 
@@ -85,23 +108,28 @@ public without sharing class BenchmarkContactCreate implements Benchmarkable {
 }
 ```
 
-#### Step 2: Create a `BenchmarkJobSetting__mdt` Record
+</details>
 
-Every Benchmark Job requires a corresponding `BenchmarkJobSetting__mdt` record. This custom metadata type defines the configuration for the job:
+<details>
+  <summary>Using Flow:</summary>
 
-![A sample BenchmarkJobSetting__mdt record](media/benchmark_job_settings.png)
+If the `BenchmarkJobSetting__mdt` includes an `Flow__c` value, then each run of the given Benchmark Job will use that value to dynamically run that flow.
 
-Each record should be linked to the `Benchmarkable` class you created in [Step 1](#step-1-create-a-benchmarkable-instance) via the _Apex Class_ field.
+Like with Apex, your flow should contain the action you want to measure, along with any necessary preceding setup actions.
 
-You can also include optional details about the job, such as the `SObjectType` and the type of `Operation` being performed or benchmarked. These details will be recorded in the resulting `Benchmark__c` records and can be helpful for reporting.
+Unlike with Apex, the framework cannot automatically capture all start/finish times. Instead, developers must use an Invocable Action call (`InvocableStartBenchmark`) to deliniate when Setup tasks have completed, and when Benchmarking begins.
 
-You can also use this record to configure where and when Benchmark jobs should run:
+As such, each Flow should follow this general pattern:
 
-- **Active:** If unchecked, the specified Benchmark job will not run. If checked, the job will run, as long as it’s eligible in the current environment (see below).
-- **Excluded Sandbox(es):** A comma-separated list of sandbox names (e.g., `full`, `partial`, `uat`). The specified Benchmark job will not run in these sandboxes.
-- **Run In Production?:** If checked, the Benchmark job will run in Production (and Developer Edition) orgs. By default, this is `false`.
+1. Perform any setup tasks (ie., inserting parent records)
+2. Run the `InvocableStartBenchmark`/**"Run Benchmark Start Time"** action
+3. Perform the processing task you want to benchmark
 
-> _:rotating_light: **IMPORTANT**: Each Benchmark Job is rolled back at the end of the transaction. However, some actions (such as "deliver immediately" Platform Events, API calls, etc.) cannot be rolled back. Use caution if you choose to override this setting._
+For example, see the included [sample flow](/example-app/flows/Example_Benchmark_Flow.flow-meta.xml):
+
+![A sample Flow implementation](media/sample_flow.png)
+
+</details>
 
 ### Schedule Recurring Benchmark Jobs
 
@@ -121,6 +149,49 @@ System.debug('Scheduled: ' + jobId);
 
 ### Monitoring
 
-The results of each benchmark job are recorded in the `Benchmark__c` custom object. You can run reports on this object to monitor the performance of specific benchmarks over time.
+The results of each benchmark job are recorded in the `Benchmark__c` custom object:
 
 ![An example of a Benchmark record](media/benchmark_record.png)
+
+The **Retry** button on the Benchmark record allows for users to manually re-run the current Benchmark Job. When the job runs, it will create a net-new Benchmark record:
+
+![The "Retry" button in action](media/benchmark_retry.gif)
+
+You can also run reports on this object to monitor the performance of specific benchmarks over time:
+![A sample report used for monitoring performance](media/sample_report.png)
+
+## Optional Plugins
+
+### Logging
+
+By default, the application will post internal logs to standard Salesforce debug logs. If desired, you can write an Apex adapter which will cause these internal logs to be published via the logging application of your choice. Read more below:
+
+<details>
+  <summary>Implement a Logger Plugin:</summary>
+
+To get started, first create an Apex class that fulfills these requirements:
+
+1. Implement the `BenchmarkLogs.Adapter` interface (shown below).
+2. Ensure your class has a publicly accessible, 0-argument constructor
+
+Here's a sample adapter that hooks into the [`apex-logger`](https://github.com/jasonsiders/apex-logger) framework:
+
+```java
+public class SampleAdapter implements BenchmarkLogs.Adapter {
+    // This is the Logger object from apex-logger
+    private Logger logger = new Logger();
+
+    public void log(System.LoggingLevel level, Object message) {
+        this.logger?.log(level, message);
+    }
+
+    public void save() {
+        this.logger?.publish();
+    }
+}
+```
+
+Once defined, list the fully qualified API name of your class, including namespace (if any) in the `apex-benchamrk Settings`'s _Log Adapter_ field:
+![An example defining a custom log adapter](media/log_adapter.png)
+
+</details>
