@@ -81,7 +81,7 @@ private class BenchmarkLogsTest {
 
 		Test.startTest();
 		try {
-			logger?.log(System.LoggingLevel.INFO, 'This is a test!');
+			logger?.log(LoggingLevel.INFO, 'This is a test!');
 			logger?.save();
 		} catch (Exception error) {
 			Assert.fail('Failed to log: ' + error);
@@ -99,7 +99,7 @@ private class BenchmarkLogsTest {
 	// **** INNER **** //
 	@SuppressWarnings('PMD.EmptyStatementBlock')
 	public class TestAdapter implements BenchmarkLogs.Adapter {
-		public void log(System.LoggingLevel level, Object message) {
+		public void log(LoggingLevel level, Object message) {
 			// This test adapter doesn't need to do anything
 		}
 
