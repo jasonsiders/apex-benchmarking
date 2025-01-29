@@ -157,7 +157,8 @@ The **Retry** button on the Benchmark record allows for users to manually re-run
 
 ![The "Retry" button in action](media/benchmark_retry.gif)
 
-You can also run reports on this object to monitor the performance of specific benchmarks over time.
+You can also run reports on this object to monitor the performance of specific benchmarks over time:
+![A sample report used for monitoring performance](media/sample_report.png)
 
 ## Optional Plugins
 
