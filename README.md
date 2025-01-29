@@ -158,3 +158,39 @@ The **Retry** button on the Benchmark record allows for users to manually re-run
 ![The "Retry" button in action](media/benchmark_retry.gif)
 
 You can also run reports on this object to monitor the performance of specific benchmarks over time.
+
+## Optional Plugins
+
+### Logging
+
+By default, the application will post internal logs to standard Salesforce debug logs. If desired, you can write an Apex adapter which will cause these internal logs to be published via the logging application of your choice. Read more below:
+
+<details>
+  <summary>Implement a Logger Plugin:</summary>
+
+To get started, first create an Apex class that fulfills these requirements:
+
+1. Implement the `BenchmarkLogs.Adapter` interface (shown below).
+2. Ensure your class has a publicly accessible, 0-argument constructor
+
+Here's a sample adapter that hooks into the [`apex-logger`](https://github.com/jasonsiders/apex-logger) framework:
+
+```java
+public class SampleAdapter implements BenchmarkLogs.Adapter {
+    // This is the Logger object from apex-logger
+    private Logger logger = new Logger();
+
+    public void log(System.LoggingLevel level, Object message) {
+        this.logger?.log(level, message);
+    }
+
+    public void save() {
+        this.logger?.publish();
+    }
+}
+```
+
+Once defined, list the fully qualified API name of your class, including namespace (if any) in the `apex-benchamrk Settings`'s _Log Adapter_ field:
+![An example defining a custom log adapter](media/log_adapter.png)
+
+</details>

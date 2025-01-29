@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.EmptyCatchBlock')
+@SuppressWarnings('PMD.ApexDoc, PMD.EmptyCatchBlock, PMD.UnusedLocalVariable')
 @IsTest
 private class BenchmarkJobTest {
 	@IsTest
@@ -427,6 +427,7 @@ private class BenchmarkJobTest {
 				SetupStartedAt__c,
 				SObjectType__c
 			FROM Benchmark__c
+			LIMIT 50000
 		];
 	}
 

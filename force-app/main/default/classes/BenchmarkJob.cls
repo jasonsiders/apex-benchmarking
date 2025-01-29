@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.AvoidGlobalModifier, PMD.ApexDoc')
 global without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
 	/**
 	 * The BenchmarkJob queueable runs on the BenchmarkJobSetting__mdt custom metadata type.
@@ -8,14 +8,17 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * It uses this artifact to perform measurable tasks to be recorded in a Benchmark__c record.
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
-
-	// **** STATIC **** //
 	private static final String FLOW_ERROR_PROPERTY = 'error';
 	@TestVisible
 	private static Environment environment = new BenchmarkJob.Environment();
 	@TestVisible
 	private static FlowRunner flowRunner = new BenchmarkJob.FlowRunner();
 
+	private Benchmark__c benchmarkRecord;
+	private BenchmarkJobSetting__mdt currentJob;
+	private Map<String, BenchmarkJobSetting__mdt> pending;
+
+	// **** STATIC **** //
 	global static void validate(String jobName) {
 		// Checks if the given job is active & eligible to be run in the current environment
 		// If not, throws an IneligibleJobException
@@ -28,11 +31,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			throw new BenchmarkJob.IneligibleJobException(msg);
 		}
 	}
-
-	// **** MEMBERS **** //
-	private Benchmark__c benchmarkRecord;
-	private BenchmarkJobSetting__mdt currentJob;
-	private Map<String, BenchmarkJobSetting__mdt> pending;
 
 	// **** CONSTRUCTORS **** //
 	global BenchmarkJob(Set<String> jobNames) {
@@ -64,6 +62,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			this.logAndRethrow(error);
 		} finally {
 			Database.rollback(savepoint);
+			BenchmarkLogs.LOGGER?.save();
 		}
 	}
 
@@ -73,19 +72,21 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			if (this.benchmarkRecord != null) {
 				this.captureErrorDetails(context);
 				Database.insert(this.benchmarkRecord, System.AccessLevel.SYSTEM_MODE);
-				System.debug(LoggingLevel.FINEST, 'Saved Benchmark: ' + this.benchmarkRecord);
 			}
 			// Launch the next iteration of the job
 			this.getNext()?.launch();
 		} catch (Exception error) {
 			this.logAndRethrow(error);
+		} finally {
+			BenchmarkLogs.LOGGER?.save();
 		}
 	}
 
 	global virtual Id launch() {
 		if (this.currentJob != null) {
 			Id jobId = System.enqueueJob(this);
-			System.debug(System.LoggingLevel.FINEST, 'Launching new job: ' + jobId);
+			BenchmarkLogs.LOGGER?.log(LoggingLevel.FINEST, 'Launching new job: ' + jobId);
+			BenchmarkLogs.LOGGER?.save();
 			return jobId;
 		} else {
 			return null;
@@ -117,11 +118,15 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			// If an exception wasn't thrown, return the current job instance
 			return this;
 		} catch (BenchmarkJob.IneligibleJobException error) {
-			// If so, skip the current job, and recurse to find the next job in the chain
+			// If the current job is ineligible, skip it, and recurse to find the next job in the chain
 			return this.getNext();
 		} finally {
-			System.debug(System.LoggingLevel.FINEST, 'Next Benchmark Job: ' + this.currentJob?.DeveloperName);
-			System.debug(System.LoggingLevel.FINEST, 'Pending Benchmark Jobs: ' + this.pending?.keySet());
+			// Log the current state of the job
+			String summary = String.format(
+				'Next Benchmark Job: {0}\nPending Benchmark Jobs: {1}',
+				new List<String>{ this.currentJob?.DeveloperName, this.pending?.keySet()?.toString() }
+			);
+			BenchmarkLogs.LOGGER?.log(LoggingLevel.FINEST, summary);
 		}
 	}
 
@@ -145,8 +150,10 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	private AbstractProcessor initProcessor() {
 		if (String.isNotBlank(this.currentJob?.ApexClass__c)) {
+			BenchmarkLogs.LOGGER?.log(LoggingLevel.FINEST, 'Processing Apex Class: ' + this.currentJob?.ApexClass__c);
 			return new ApexProcessor(this.currentJob, this.benchmarkRecord);
 		} else if (String.isNotBlank(this.currentJob?.Flow__c)) {
+			BenchmarkLogs.LOGGER?.log(LoggingLevel.FINEST, 'Processing Flow: ' + this.currentJob?.Flow__c);
 			return new FlowProcessor(this.currentJob, this.benchmarkRecord);
 		} else {
 			String msg = 'No Apex Class or Flow defined in BenchmarkJobSetting__mdt';
@@ -156,7 +163,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 	private void logAndRethrow(Exception error) {
 		String msg = error + '\n' + error?.getStackTraceString();
-		System.debug(System.LoggingLevel.ERROR, msg);
+		BenchmarkLogs.LOGGER?.log(LoggingLevel.ERROR, msg);
 		throw error;
 	}
 
@@ -174,7 +181,7 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 		public abstract void process();
 
-		protected void stamp(SObjectField field) {
+		protected void stampCpuTime(SObjectField field) {
 			// Use this method to record the current Limits.getCpuTime() value on a certain SObjectField
 			this.record?.put(field, Limits.getCpuTime());
 		}
@@ -190,12 +197,12 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 
 		public override void process() {
 			Benchmarkable instance = this.initBenchmarkable();
-			this.stamp(Benchmark__c.SetupStartedAt__c);
+			this.stampCpuTime(Benchmark__c.SetupStartedAt__c);
 			instance?.setup();
-			this.stamp(Benchmark__c.SetupCompletedAt__c);
-			this.stamp(Benchmark__c.BenchmarkStartedAt__c);
+			this.stampCpuTime(Benchmark__c.SetupCompletedAt__c);
+			this.stampCpuTime(Benchmark__c.BenchmarkStartedAt__c);
 			instance?.benchmark();
-			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
+			this.stampCpuTime(Benchmark__c.BenchmarkCompletedAt__c);
 		}
 
 		private Benchmarkable initBenchmarkable() {
@@ -254,17 +261,17 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 		}
 
 		public override virtual void process() {
-			this.stamp(Benchmark__c.SetupStartedAt__c);
+			this.stampCpuTime(Benchmark__c.SetupStartedAt__c);
 			String flowName = this.setting?.Flow__c;
 			FlowRunner?.run(flowName);
-			this.stamp(Benchmark__c.BenchmarkCompletedAt__c);
-			this.reconcileTimestamps();
+			this.stampCpuTime(Benchmark__c.BenchmarkCompletedAt__c);
+			this.reconcileTimestampCpuTimes();
 		}
 
-		private void reconcileTimestamps() {
-			// This class automatically adds the SetupStartedAt__c and BenchmarkCompletedAt__c timestamps,
+		private void reconcileTimestampCpuTimes() {
+			// This class automatically adds the SetupStartedAt__c and BenchmarkCompletedAt__c timestampCpuTimes,
 			// but relies on subscribers to use the InvocableBenchmarkStart class
-			// to manually set the SetupCompletedAt__c and BenchmarkStartedAt__c timestamps.
+			// to manually set the SetupCompletedAt__c and BenchmarkStartedAt__c timestampCpuTimes.
 			// If they fail to do this, provide default values instead of leaving null
 			Decimal defaultValue = this.record?.SetupStartedAt__c;
 			this.record.SetupCompletedAt__c = this.record.SetupCompletedAt__c ?? defaultValue;
