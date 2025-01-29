@@ -5,9 +5,9 @@
     <description
 	>Developers should either specify an SObjectType via the dropdown, or the free text field - but not both</description>
     <errorConditionFormula>OR(
-  NOT(ISBLANK(TEXT(SObjectType__c))) &amp;&amp; NOT(ISBLANK(SObjectTypeName__c)),
-  ISBLANK(TEXT(SObjectType__c)) &amp;&amp; ISBLANK(SObjectTypeName__c)
-)</errorConditionFormula>
+        NOT(ISBLANK(SObjectType__r.QualifiedApiName)) &amp;&amp; NOT(ISBLANK(SObjectTypeName__c)),
+        ISBLANK(SObjectType__r.QualifiedApiName) &amp;&amp; ISBLANK(SObjectTypeName__c)
+        )</errorConditionFormula>
     <errorDisplayField>SObjectType__c</errorDisplayField>
     <errorMessage
 	>Please specify an SObjectType, using either the dropdown or the free-text field - but not both.</errorMessage>
