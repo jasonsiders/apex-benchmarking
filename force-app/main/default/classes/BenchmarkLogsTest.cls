@@ -93,7 +93,7 @@ private class BenchmarkLogsTest {
 	@TestSetup
 	static void setup() {
 		// Clear the current Benchmark Settings for testing
-		delete [SELECT Id FROM BenchmarkSetting__c];
+		delete [SELECT Id FROM BenchmarkSetting__c LIMIT 50000];
 	}
 
 	// **** INNER **** //

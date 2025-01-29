@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.ApexDoc, PMD.AvoidGlobalModifier')
 @IsTest
 global class BenchmarkTestUtils {
 	global static List<AsyncApexJob> getAsyncJobs() {

@@ -2,7 +2,8 @@
 private class BenchmarkSchedulableTest {
 	@IsTest
 	static void shouldLaunchABenchmarkJob() {
-		BenchmarkJobSetting__mdt setting = BenchmarkTestUtils.initSetting();
+		// Instanatiate a test BenchmarkJobSetting__mdt record
+		BenchmarkTestUtils.initSetting();
 
 		Test.startTest();
 		new BenchmarkSchedulable()?.execute(null);

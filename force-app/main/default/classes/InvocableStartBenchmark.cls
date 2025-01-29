@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.ApexDoc, PMD.AvoidGlobalModifier')
 global abstract class InvocableStartBenchmark {
 	/**
 	 * This class is used by flows to indicate when setup has completed, and benchmarking is about to begin

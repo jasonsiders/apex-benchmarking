@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.AvoidGlobalModifier, PMD.ApexDoc')
 global without sharing virtual class BenchmarkJob implements System.Queueable, System.Finalizer {
 	/**
 	 * The BenchmarkJob queueable runs on the BenchmarkJobSetting__mdt custom metadata type.
@@ -8,16 +8,17 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 	 * It uses this artifact to perform measurable tasks to be recorded in a Benchmark__c record.
 	 * Developers can run reports on Benchmark__c records over time to track changes in performance over time.
 	 **/
-
-	// **** CONSTANT **** //
 	private static final String FLOW_ERROR_PROPERTY = 'error';
-
-	// **** STATIC **** //
 	@TestVisible
 	private static Environment environment = new BenchmarkJob.Environment();
 	@TestVisible
 	private static FlowRunner flowRunner = new BenchmarkJob.FlowRunner();
 
+	private Benchmark__c benchmarkRecord;
+	private BenchmarkJobSetting__mdt currentJob;
+	private Map<String, BenchmarkJobSetting__mdt> pending;
+
+	// **** STATIC **** //
 	global static void validate(String jobName) {
 		// Checks if the given job is active & eligible to be run in the current environment
 		// If not, throws an IneligibleJobException
@@ -30,11 +31,6 @@ global without sharing virtual class BenchmarkJob implements System.Queueable, S
 			throw new BenchmarkJob.IneligibleJobException(msg);
 		}
 	}
-
-	// **** MEMBERS **** //
-	private Benchmark__c benchmarkRecord;
-	private BenchmarkJobSetting__mdt currentJob;
-	private Map<String, BenchmarkJobSetting__mdt> pending;
 
 	// **** CONSTRUCTORS **** //
 	global BenchmarkJob(Set<String> jobNames) {

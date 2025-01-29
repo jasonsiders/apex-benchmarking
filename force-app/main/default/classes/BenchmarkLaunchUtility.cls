@@ -1,4 +1,4 @@
-@SuppressWarnings('PMD.AvoidGlobalModifier')
+@SuppressWarnings('PMD.AvoidGlobalModifier, PMD.ApexDoc')
 global class BenchmarkLaunchUtility {
 	/**
 	 * This class contains an @AuraEnabled method to launch benchmark jobs from LWC

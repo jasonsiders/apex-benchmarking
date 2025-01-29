@@ -1,3 +1,4 @@
+@SuppressWarnings('PMD.ApexDoc')
 public without sharing abstract class BenchmarkJobSettingSelector {
 	/**
 	 * This class is used internally by the framework to centralize queries for BenchmarkJobSetting__mdt records
@@ -62,6 +63,7 @@ public without sharing abstract class BenchmarkJobSettingSelector {
 				SObjectTypeName__c
 			FROM BenchmarkJobSetting__mdt
 			WITH SYSTEM_MODE
+			LIMIT 50000
 		];
 	}
 
