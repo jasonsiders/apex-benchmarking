@@ -2,8 +2,8 @@
 <ReportFolder xmlns="http://soap.sforce.com/2006/04/metadata">
     <folderShares>
         <accessLevel>Manage</accessLevel>
-        <sharedTo>test-ds0iaq7tx3tj@example.com</sharedTo>
+        <sharedTo>test-brlzcw0gpc0z@example.com</sharedTo>
         <sharedToType>User</sharedToType>
     </folderShares>
-    <name>Benchmark Reports</name>
+    <name>Benchmarks</name>
 </ReportFolder>

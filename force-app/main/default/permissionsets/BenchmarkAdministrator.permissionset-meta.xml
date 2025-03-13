@@ -11,8 +11,8 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
-        <field>Benchmark__c.BenchmarkDuration__c</field>
+        <editable>true</editable>
+        <field>Benchmark__c.BenchmarkDateTime__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -31,18 +31,8 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
-        <editable>false</editable>
-        <field>Benchmark__c.ErrorLocation__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
         <editable>true</editable>
         <field>Benchmark__c.Error__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>Benchmark__c.HasErrors__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -68,11 +58,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Benchmark__c.SetupCompletedAt__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>Benchmark__c.SetupDuration__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

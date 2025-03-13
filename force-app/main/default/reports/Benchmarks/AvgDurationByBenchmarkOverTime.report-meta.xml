@@ -9,22 +9,21 @@
             <axisBinding>y</axisBinding>
             <column>Benchmark__c.BenchmarkDuration__c</column>
         </chartSummaries>
-        <chartType>HorizontalBarGrouped</chartType>
+        <chartType>LineGrouped</chartType>
         <enableHoverLabels>false</enableHoverLabels>
         <expandOthers>true</expandOthers>
-        <groupingColumn>Benchmark__c.SObjectType__c</groupingColumn>
-        <legendPosition>Bottom</legendPosition>
+        <groupingColumn>Benchmark__c.BenchmarkDateTime__c</groupingColumn>
+        <legendPosition>Right</legendPosition>
         <location>CHART_BOTTOM</location>
-        <secondaryGroupingColumn>Benchmark__c.Operation__c</secondaryGroupingColumn>
+        <secondaryGroupingColumn>Benchmark__c.SObjectTypeOperation__c</secondaryGroupingColumn>
         <showAxisLabels>false</showAxisLabels>
         <showPercentage>false</showPercentage>
         <showTotal>false</showTotal>
-        <showValues>true</showValues>
+        <showValues>false</showValues>
         <size>Medium</size>
         <summaryAxisRange>Auto</summaryAxisRange>
         <textColor>#000000</textColor>
         <textSize>12</textSize>
-        <title>Benchmark Duration by Job</title>
         <titleColor>#000000</titleColor>
         <titleSize>18</titleSize>
     </chart>
@@ -32,40 +31,28 @@
         <aggregateTypes>Average</aggregateTypes>
         <field>Benchmark__c.BenchmarkDuration__c</field>
     </columns>
-    <description
-	>Displays the average Benchmark Duration (ms) by SObjectType &amp; Operation. Use this report to understand which processes are heaviest, to focus your optimization efforts.</description>
-    <filter>
-        <criteriaItems>
-            <column>Benchmark__c.HasErrors__c</column>
-            <columnToColumn>false</columnToColumn>
-            <isUnlocked>true</isUnlocked>
-            <operator>equals</operator>
-            <value>0</value>
-        </criteriaItems>
-    </filter>
-    <format>Summary</format>
+    <format>Matrix</format>
+    <groupingsAcross>
+        <field>Benchmark__c.BenchmarkDateTime__c</field>
+        <sortOrder>Asc</sortOrder>
+    </groupingsAcross>
     <groupingsDown>
         <dateGranularity>Day</dateGranularity>
-        <field>Benchmark__c.SObjectType__c</field>
+        <field>Benchmark__c.SObjectTypeOperation__c</field>
         <sortOrder>Asc</sortOrder>
     </groupingsDown>
-    <groupingsDown>
-        <dateGranularity>Day</dateGranularity>
-        <field>Benchmark__c.Operation__c</field>
-        <sortOrder>Asc</sortOrder>
-    </groupingsDown>
-    <name>Performance by SObjectType &amp; Operation</name>
+    <name>Avg Duration by Benchmark Over Time</name>
     <params>
         <name>co</name>
         <value>0</value>
     </params>
     <reportType>CustomEntity$Benchmark__c</reportType>
-    <scope>organization</scope>
+    <scope>user</scope>
     <showDetails>false</showDetails>
-    <showGrandTotal>false</showGrandTotal>
-    <showSubTotals>false</showSubTotals>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
     <timeFrameFilter>
-        <dateColumn>CUST_CREATED_DATE</dateColumn>
-        <interval>INTERVAL_LAST30</interval>
+        <dateColumn>Benchmark__c.BenchmarkDateTime__c</dateColumn>
+        <interval>INTERVAL_CUSTOM</interval>
     </timeFrameFilter>
 </Report>
