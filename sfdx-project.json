@@ -1,8 +1,8 @@
 {
 	"packageDirectories": [
 		{
-			"versionName": "ver 1.0.1",
-			"versionNumber": "1.0.1.NEXT",
+			"versionName": "ver 1.0.2",
+			"versionNumber": "1.0.2.NEXT",
 			"path": "force-app",
 			"default": true,
 			"package": "apex-benchmarking",
@@ -17,6 +17,7 @@
 		"apex-benchmarking": "0HoDn0000010wCEKAY",
 		"apex-benchmarking@0.1.0-4": "04tDn0000011NzDIAU",
 		"apex-benchmarking@1.0.0-1": "04tDn0000011NzIIAU",
-		"apex-benchmarking@1.0.1-1": "04tDn0000011NzSIAU"
+		"apex-benchmarking@1.0.1-1": "04tDn0000011NzSIAU",
+		"apex-benchmarking@1.0.2-1": "04tDn0000011O30IAE"
 	}
 }
