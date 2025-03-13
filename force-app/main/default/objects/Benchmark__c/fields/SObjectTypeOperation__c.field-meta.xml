@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SObjectTypeOperation__c</fullName>
+    <description>Concatenates the SObjectType &amp; Operation fields together, for grouping in reports.</description>
+    <externalId>false</externalId>
+    <formula>IF(
+  AND(
+    NOT(ISBLANK(SObjectType__c)),
+    NOT(ISBLANK(Operation__c))
+  ),
+  /* Concatenate both values w/a colon separator */
+  SObjectType__c + &quot;: &quot; + Operation__c,
+  /* Display whichever value is not null */
+  SObjectType__c + Operation__c
+)</formula>
+    <label>SObjectType &amp; Operation</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
